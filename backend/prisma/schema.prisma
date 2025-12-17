@@ -1,0 +1,580 @@
+// Requirements Management System - Prisma Schema
+// Generated: 2025-12-17
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Enums
+// ============================================
+
+enum LoginType {
+  EMAIL_PASSWORD
+  GOOGLE
+  GITHUB
+  OIDC
+  SAML
+}
+
+enum UserType {
+  SUPER_ADMIN
+  PROJECT_ADMIN
+  CONTRIBUTOR
+  REVIEWER
+}
+
+enum RequirementStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  DEPRECATED
+  ARCHIVED
+}
+
+enum SolutionStatus {
+  DRAFT
+  DESIGNING
+  IMPLEMENTING
+  DONE
+  DEPRECATED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  ARCHIVED
+}
+
+enum TaskType {
+  BACKEND
+  FRONTEND
+  DEVOPS
+  QA
+  DOCUMENTATION
+  OTHER
+}
+
+enum LinkType {
+  SATISFIES
+  IMPLEMENTS
+  REFINES
+}
+
+enum IterationStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+enum TestType {
+  MANUAL
+  AUTOMATED
+}
+
+enum TestRunStatus {
+  PASSED
+  FAILED
+  BLOCKED
+  SKIPPED
+}
+
+enum AttachedToType {
+  REQUIREMENT
+  SOLUTION
+  TASK
+  TEST
+  PROJECT
+}
+
+enum ImportExportType {
+  REQIF_IMPORT
+  REQIF_EXPORT
+  MD_IMPORT
+  MD_EXPORT
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+// ============================================
+// Core Entities
+// ============================================
+
+model User {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  longName     String
+  email        String?   @unique
+  loginType    LoginType
+  passwordHash String?
+  isActive     Boolean   @default(true)
+  userType     UserType
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relationships
+  createdProjects         Project[]
+  createdRequirements     Requirement[]
+  createdRequirementVersions RequirementVersion[]
+  createdSolutions        Solution[]
+  createdSolutionVersions SolutionVersion[]
+  createdTasks            Task[]
+  createdTaskVersions     TaskVersion[]
+  createdTests            TestCase[]
+  executedTestRuns        TestRun[]
+  uploadedAttachments     Attachment[]
+  createdImportExportJobs ImportExportJob[]
+  refreshTokens           RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model ProjectType {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  description     String?
+  defaultSettings Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  projects Project[]
+
+  @@map("project_types")
+}
+
+model Project {
+  id            String   @id @default(uuid())
+  name          String
+  code          String
+  description   String?
+  projectTypeId String
+  isActive      Boolean  @default(true)
+  createdBy     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  projectType      ProjectType       @relation(fields: [projectTypeId], references: [id])
+  creator          User              @relation(fields: [createdBy], references: [id])
+  groups           ProjectGroup[]
+  subjects         Subject[]
+  requirements     Requirement[]
+  solutions        Solution[]
+  tasks            Task[]
+  iterations       Iteration[]
+  testCases        TestCase[]
+  attachments      Attachment[]
+  importExportJobs ImportExportJob[]
+
+  @@unique([code])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("projects")
+}
+
+model ProjectGroup {
+  id          String   @id @default(uuid())
+  projectId   String
+  name        String
+  description String?
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  subjects Subject[]
+
+  @@index([projectId])
+  @@index([orderIndex])
+  @@map("project_groups")
+}
+
+model Subject {
+  id          String   @id @default(uuid())
+  projectId   String
+  groupId     String?
+  name        String
+  description String?
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  group        ProjectGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  requirements Requirement[]
+
+  @@index([projectId])
+  @@index([groupId])
+  @@index([orderIndex])
+  @@map("subjects")
+}
+
+// ============================================
+// Requirements and Versioning
+// ============================================
+
+model Requirement {
+  id                  String            @id @default(uuid())
+  uid                 String
+  projectId           String
+  subjectId           String?
+  parentRequirementId String?
+  currentVersionId    String?           @unique
+  status              RequirementStatus @default(DRAFT)
+  priority            Int?
+  createdBy           String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  project           Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  subject           Subject?                @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  parentRequirement Requirement?            @relation("RequirementHierarchy", fields: [parentRequirementId], references: [id], onDelete: Cascade)
+  subRequirements   Requirement[]           @relation("RequirementHierarchy")
+  creator           User                    @relation(fields: [createdBy], references: [id])
+  versions          RequirementVersion[]    @relation("RequirementVersions")
+  currentVersion    RequirementVersion?     @relation("CurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
+  solutionLinks     RequirementSolutionLink[]
+  testLinks         RequirementTestLink[]
+  iterationItems    IterationItem[]
+
+  @@unique([projectId, uid])
+  @@index([projectId])
+  @@index([subjectId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("requirements")
+}
+
+model RequirementVersion {
+  id            String    @id @default(uuid())
+  requirementId String
+  versionNumber Int
+  title         String
+  statement     String
+  rationale     String?
+  tags          String[]
+  deltaNotes    String?
+  effectiveFrom DateTime  @default(now())
+  effectiveTo   DateTime?
+  createdBy     String
+  createdAt     DateTime  @default(now())
+
+  requirement           Requirement  @relation("RequirementVersions", fields: [requirementId], references: [id], onDelete: Cascade)
+  creator               User         @relation(fields: [createdBy], references: [id])
+  currentForRequirement Requirement? @relation("CurrentVersion")
+
+  @@unique([requirementId, versionNumber])
+  @@index([requirementId])
+  @@index([createdAt])
+  @@map("requirement_versions")
+}
+
+// ============================================
+// Solutions and Tasks
+// ============================================
+
+model Solution {
+  id               String         @id @default(uuid())
+  code             String
+  projectId        String
+  parentSolutionId String?
+  currentVersionId String?        @unique
+  status           SolutionStatus @default(DRAFT)
+  createdBy        String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  project          Project                   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentSolution   Solution?                 @relation("SolutionHierarchy", fields: [parentSolutionId], references: [id], onDelete: Cascade)
+  subSolutions     Solution[]                @relation("SolutionHierarchy")
+  creator          User                      @relation(fields: [createdBy], references: [id])
+  versions         SolutionVersion[]         @relation("SolutionVersions")
+  currentVersion   SolutionVersion?          @relation("CurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
+  requirementLinks RequirementSolutionLink[]
+  tasks            Task[]
+  testLinks        SolutionTestLink[]
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("solutions")
+}
+
+model SolutionVersion {
+  id                String   @id @default(uuid())
+  solutionId        String
+  versionNumber     Int
+  title             String
+  description       String
+  architectureNotes String?
+  tags              String[]
+  createdBy         String
+  createdAt         DateTime @default(now())
+
+  solution           Solution  @relation("SolutionVersions", fields: [solutionId], references: [id], onDelete: Cascade)
+  creator            User      @relation(fields: [createdBy], references: [id])
+  currentForSolution Solution? @relation("CurrentVersion")
+
+  @@unique([solutionId, versionNumber])
+  @@index([solutionId])
+  @@index([createdAt])
+  @@map("solution_versions")
+}
+
+model RequirementSolutionLink {
+  id            String   @id @default(uuid())
+  requirementId String
+  solutionId    String
+  linkType      LinkType @default(SATISFIES)
+  createdAt     DateTime @default(now())
+
+  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  solution    Solution    @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+
+  @@unique([requirementId, solutionId])
+  @@index([requirementId])
+  @@index([solutionId])
+  @@map("requirement_solution_links")
+}
+
+model Task {
+  id               String     @id @default(uuid())
+  projectId        String
+  solutionId       String
+  currentVersionId String?    @unique
+  status           TaskStatus @default(TODO)
+  createdBy        String
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  solution       Solution        @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+  creator        User            @relation(fields: [createdBy], references: [id])
+  versions       TaskVersion[]   @relation("TaskVersions")
+  currentVersion TaskVersion?    @relation("CurrentVersion", fields: [currentVersionId], references: [id], onDelete: SetNull)
+  iterationItems IterationItem[]
+
+  @@index([projectId])
+  @@index([solutionId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("tasks")
+}
+
+model TaskVersion {
+  id            String   @id @default(uuid())
+  taskId        String
+  versionNumber Int
+  title         String
+  description   String
+  type          TaskType
+  estimate      Float?
+  createdBy     String
+  createdAt     DateTime @default(now())
+
+  task           Task  @relation("TaskVersions", fields: [taskId], references: [id], onDelete: Cascade)
+  creator        User  @relation(fields: [createdBy], references: [id])
+  currentForTask Task? @relation("CurrentVersion")
+
+  @@unique([taskId, versionNumber])
+  @@index([taskId])
+  @@index([createdAt])
+  @@map("task_versions")
+}
+
+// ============================================
+// Iterations
+// ============================================
+
+model Iteration {
+  id             String          @id @default(uuid())
+  projectId      String
+  name           String
+  iterationIndex Int
+  startDate      DateTime
+  endDate        DateTime
+  status         IterationStatus @default(PLANNED)
+  goals          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  project  Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items    IterationItem[]
+  testRuns TestRun[]
+
+  @@unique([projectId, iterationIndex])
+  @@index([projectId])
+  @@index([status])
+  @@index([startDate])
+  @@map("iterations")
+}
+
+model IterationItem {
+  id             String   @id @default(uuid())
+  iterationId    String
+  taskId         String?
+  requirementId  String?
+  statusOverride String?
+  createdAt      DateTime @default(now())
+
+  iteration   Iteration    @relation(fields: [iterationId], references: [id], onDelete: Cascade)
+  task        Task?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  requirement Requirement? @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@index([iterationId])
+  @@index([taskId])
+  @@index([requirementId])
+  @@map("iteration_items")
+}
+
+// ============================================
+// Test Management
+// ============================================
+
+model TestCase {
+  id          String   @id @default(uuid())
+  projectId   String
+  name        String
+  description String
+  type        TestType
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project          Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator          User                  @relation(fields: [createdBy], references: [id])
+  requirementLinks RequirementTestLink[]
+  solutionLinks    SolutionTestLink[]
+  testRuns         TestRun[]
+
+  @@index([projectId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("test_cases")
+}
+
+model TestRun {
+  id          String        @id @default(uuid())
+  testId      String
+  iterationId String?
+  status      TestRunStatus
+  notes       String?
+  executedBy  String
+  executedAt  DateTime      @default(now())
+
+  test      TestCase   @relation(fields: [testId], references: [id], onDelete: Cascade)
+  iteration Iteration? @relation(fields: [iterationId], references: [id], onDelete: SetNull)
+  executor  User       @relation(fields: [executedBy], references: [id])
+
+  @@index([testId])
+  @@index([iterationId])
+  @@index([status])
+  @@index([executedAt])
+  @@map("test_runs")
+}
+
+model RequirementTestLink {
+  id            String   @id @default(uuid())
+  requirementId String
+  testId        String
+  createdAt     DateTime @default(now())
+
+  requirement Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  test        TestCase    @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([requirementId, testId])
+  @@index([requirementId])
+  @@index([testId])
+  @@map("requirement_test_links")
+}
+
+model SolutionTestLink {
+  id         String   @id @default(uuid())
+  solutionId String
+  testId     String
+  createdAt  DateTime @default(now())
+
+  solution Solution @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+  test     TestCase @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([solutionId, testId])
+  @@index([solutionId])
+  @@index([testId])
+  @@map("solution_test_links")
+}
+
+// ============================================
+// File Attachments
+// ============================================
+
+model Attachment {
+  id             String         @id @default(uuid())
+  projectId      String
+  attachedToType AttachedToType
+  attachedToId   String
+  s3Key          String
+  fileName       String
+  mimeType       String
+  size           Int
+  uploadedBy     String
+  uploadedAt     DateTime       @default(now())
+
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploader User    @relation(fields: [uploadedBy], references: [id])
+
+  @@index([projectId])
+  @@index([attachedToType, attachedToId])
+  @@index([uploadedAt])
+  @@map("attachments")
+}
+
+// ============================================
+// Import/Export Jobs
+// ============================================
+
+model ImportExportJob {
+  id          String            @id @default(uuid())
+  projectId   String
+  type        ImportExportType
+  status      JobStatus         @default(QUEUED)
+  sourceS3Key String?
+  resultS3Key String?
+  log         String?
+  createdBy   String
+  createdAt   DateTime          @default(now())
+  finishedAt  DateTime?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator User    @relation(fields: [createdBy], references: [id])
+
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("import_export_jobs")
+}

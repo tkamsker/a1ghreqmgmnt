@@ -5,6 +5,7 @@ A comprehensive, cloud-ready requirements management system built with modern we
 ## Overview
 
 This system provides:
+
 - **Hierarchical Requirements Management**: Projects, groups, subjects, and nested requirements with full versioning
 - **Solution & Task Tracking**: Link requirements to solutions and break them down into trackable tasks
 - **Iteration Planning**: Organize work into development iterations/sprints
@@ -18,6 +19,7 @@ This system provides:
 ### Tech Stack
 
 **Backend:**
+
 - NestJS 10.x (TypeScript)
 - GraphQL with Apollo Server
 - PostgreSQL 15+ with Prisma ORM
@@ -25,6 +27,7 @@ This system provides:
 - Passport.js for authentication
 
 **Frontend:**
+
 - Next.js 14.x with App Router
 - React 18.x
 - Apollo Client 3.x for GraphQL
@@ -32,6 +35,7 @@ This system provides:
 - Tailwind CSS
 
 **Monorepo:**
+
 - Turborepo for build orchestration
 - pnpm workspaces
 - Shared TypeScript types package
@@ -74,15 +78,48 @@ a1ghreqmgmnt/
 
 ## Quick Start
 
-See [specs/001-monorepo-setup/quickstart.md](specs/001-monorepo-setup/quickstart.md) for detailed setup instructions.
-
 ### Prerequisites
 
 - Node.js 20+ and pnpm 8+
 - Docker Desktop (macOS/Windows) or Docker Engine (Linux)
 - Git
 
-### Basic Setup
+### Easy Setup with dev.sh Script (Recommended)
+
+The project includes a comprehensive management script that handles Docker, infrastructure, and database setup:
+
+```bash
+# One-command complete setup (first time)
+./dev.sh setup
+
+# Start all services
+./dev.sh start
+```
+
+That's it! The script will:
+
+- Check and start Docker automatically
+- Copy environment files
+- Install dependencies
+- Start infrastructure services (PostgreSQL + MinIO)
+- Run database migrations and seeding
+- Start development servers
+
+**Common Commands:**
+
+```bash
+./dev.sh start          # Start all services
+./dev.sh stop           # Stop all services
+./dev.sh restart        # Restart all services
+./dev.sh status         # Check service status
+./dev.sh test           # Run tests
+./dev.sh db-reset       # Reset database
+./dev.sh help           # Show all commands
+```
+
+See the [Development Script](#development-script) section below for all available commands.
+
+### Manual Setup (Alternative)
 
 ```bash
 # Install dependencies
@@ -93,12 +130,12 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 
 # Start infrastructure (PostgreSQL + MinIO)
-cd infra
-docker-compose up -d
+cd infra && docker-compose up -d
 
 # Run database migrations
 cd ../backend
-pnpm prisma migrate dev
+pnpm prisma migrate dev --name init
+pnpm prisma generate
 pnpm prisma db seed
 
 # Start all services
@@ -107,18 +144,81 @@ pnpm dev
 ```
 
 **Access Points:**
+
 - Frontend: http://localhost:3000
 - Backend GraphQL API: http://localhost:4000/graphql
 - PostgreSQL: localhost:5432
 - MinIO Console: http://localhost:9001
 
 **Default Credentials:**
+
 - Admin: admin@example.com / admin123
 - MinIO: minioadmin / minioadmin
 
 ## Development
 
-### Available Commands
+### Development Script
+
+The `dev.sh` script provides a unified interface for managing the entire development environment. It automatically handles Docker, infrastructure services, database setup, and development servers.
+
+#### Main Commands
+
+```bash
+./dev.sh setup          # Complete initial setup (run once)
+./dev.sh start          # Start all services (infra + dev servers)
+./dev.sh stop           # Stop all services
+./dev.sh restart        # Restart all services
+./dev.sh status         # Show status of all services
+./dev.sh help           # Show all available commands
+```
+
+#### Infrastructure Commands
+
+```bash
+./dev.sh docker         # Check and start Docker if needed
+./dev.sh infra-start   # Start infrastructure only (PostgreSQL, MinIO)
+./dev.sh infra-stop    # Stop infrastructure services
+./dev.sh infra-logs    # Show infrastructure logs in real-time
+```
+
+#### Database Commands
+
+```bash
+./dev.sh db-setup      # Run migrations and seed database
+./dev.sh db-reset      # Reset database (WARNING: deletes all data!)
+```
+
+#### Development Commands
+
+```bash
+./dev.sh install       # Install/update dependencies
+./dev.sh test          # Run all backend tests
+./dev.sh dev           # Start dev servers only (without infra)
+./dev.sh logs          # Show infrastructure logs
+```
+
+#### What the Script Does
+
+When you run `./dev.sh setup`, it:
+
+1. Checks if Docker is installed
+2. Starts Docker Desktop automatically (macOS)
+3. Copies `.env.example` files to `.env`
+4. Installs all dependencies with pnpm
+5. Starts PostgreSQL and MinIO containers
+6. Waits for PostgreSQL to be ready
+7. Runs Prisma migrations
+8. Seeds the database with default Super Admin user
+9. Displays URLs and default credentials
+
+When you run `./dev.sh start`, it:
+
+1. Ensures Docker is running
+2. Starts infrastructure services
+3. Starts both backend and frontend dev servers
+4. Shows URLs where services are accessible
+
+### Available pnpm Commands
 
 ```bash
 # Development
@@ -168,6 +268,7 @@ pnpm prisma generate
 ## Key Features
 
 ### Requirements Management
+
 - Hierarchical structure: Project → Groups → Subjects → Requirements
 - Main and sub-requirements with parent-child relationships
 - Full version history for requirements
@@ -175,18 +276,21 @@ pnpm prisma generate
 - Rich metadata: tags, priority, rationale
 
 ### Traceability
+
 - Link requirements to solutions (SATISFIES, IMPLEMENTS, REFINES)
 - Link requirements to test cases
 - Track coverage across iterations
 - Bidirectional navigation
 
 ### Import/Export
+
 - **ReqIF**: Industry-standard requirements exchange format
 - **Markdown**: Human-readable format for documentation
 - Async job processing with status tracking
 - S3-backed storage for all artifacts
 
 ### Collaboration
+
 - Role-based access control
 - Multi-user editing with version control
 - Comment and review workflows
