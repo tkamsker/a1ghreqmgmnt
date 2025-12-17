@@ -1,0 +1,530 @@
+# Core GraphQL Schema for Requirements Management System
+# Generated: 2025-12-17
+# Note: This is a subset showing primary types. Full schema to be implemented in backend.
+
+# ============================================
+# Authentication & Users
+# ============================================
+
+enum LoginType {
+  EMAIL_PASSWORD
+  GOOGLE
+  GITHUB
+  OIDC
+  SAML
+}
+
+enum UserType {
+  SUPER_ADMIN
+  PROJECT_ADMIN
+  CONTRIBUTOR
+  REVIEWER
+}
+
+type User {
+  id: ID!
+  username: String!
+  longName: String!
+  email: String
+  loginType: LoginType!
+  userType: UserType!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type AuthPayload {
+  accessToken: String!
+  refreshToken: String!
+  user: User!
+}
+
+# ============================================
+# Projects
+# ============================================
+
+type ProjectType {
+  id: ID!
+  name: String!
+  description: String
+  projects: [Project!]!
+}
+
+type Project {
+  id: ID!
+  name: String!
+  code: String!
+  description: String
+  projectType: ProjectType!
+  isActive: Boolean!
+  creator: User!
+  groups: [ProjectGroup!]!
+  subjects: [Subject!]!
+  requirements: [Requirement!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ProjectGroup {
+  id: ID!
+  name: String!
+  description: String
+  orderIndex: Int!
+  project: Project!
+  subjects: [Subject!]!
+}
+
+type Subject {
+  id: ID!
+  name: String!
+  description: String
+  orderIndex: Int!
+  project: Project!
+  group: ProjectGroup
+  requirements: [Requirement!]!
+}
+
+# ============================================
+# Requirements & Versions
+# ============================================
+
+enum RequirementStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  DEPRECATED
+  ARCHIVED
+}
+
+type Requirement {
+  id: ID!
+  uid: String!
+  status: RequirementStatus!
+  priority: Int
+  project: Project!
+  subject: Subject
+  parentRequirement: Requirement
+  subRequirements: [Requirement!]!
+  currentVersion: RequirementVersion
+  versions: [RequirementVersion!]!
+  solutionLinks: [RequirementSolutionLink!]!
+  testLinks: [RequirementTestLink!]!
+  creator: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type RequirementVersion {
+  id: ID!
+  versionNumber: Int!
+  title: String!
+  statement: String!
+  rationale: String
+  tags: [String!]!
+  deltaNotes: String
+  effectiveFrom: DateTime!
+  effectiveTo: DateTime
+  creator: User!
+  createdAt: DateTime!
+}
+
+# ============================================
+# Solutions & Tasks
+# ============================================
+
+enum SolutionStatus {
+  DRAFT
+  DESIGNING
+  IMPLEMENTING
+  DONE
+  DEPRECATED
+}
+
+type Solution {
+  id: ID!
+  code: String!
+  status: SolutionStatus!
+  project: Project!
+  parentSolution: Solution
+  subSolutions: [Solution!]!
+  currentVersion: SolutionVersion
+  versions: [SolutionVersion!]!
+  requirementLinks: [RequirementSolutionLink!]!
+  tasks: [Task!]!
+  creator: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type SolutionVersion {
+  id: ID!
+  versionNumber: Int!
+  title: String!
+  description: String!
+  architectureNotes: String
+  tags: [String!]!
+  creator: User!
+  createdAt: DateTime!
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  BLOCKED
+  DONE
+  ARCHIVED
+}
+
+enum TaskType {
+  BACKEND
+  FRONTEND
+  DEVOPS
+  QA
+  DOCUMENTATION
+  OTHER
+}
+
+type Task {
+  id: ID!
+  status: TaskStatus!
+  project: Project!
+  solution: Solution!
+  currentVersion: TaskVersion
+  versions: [TaskVersion!]!
+  creator: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type TaskVersion {
+  id: ID!
+  versionNumber: Int!
+  title: String!
+  description: String!
+  type: TaskType!
+  estimate: Float
+  creator: User!
+  createdAt: DateTime!
+}
+
+# ============================================
+# Traceability Links
+# ============================================
+
+enum LinkType {
+  SATISFIES
+  IMPLEMENTS
+  REFINES
+}
+
+type RequirementSolutionLink {
+  id: ID!
+  requirement: Requirement!
+  solution: Solution!
+  linkType: LinkType!
+  createdAt: DateTime!
+}
+
+type RequirementTestLink {
+  id: ID!
+  requirement: Requirement!
+  test: TestCase!
+  createdAt: DateTime!
+}
+
+# ============================================
+# Test Management
+# ============================================
+
+enum TestType {
+  MANUAL
+  AUTOMATED
+}
+
+enum TestRunStatus {
+  PASSED
+  FAILED
+  BLOCKED
+  SKIPPED
+}
+
+type TestCase {
+  id: ID!
+  name: String!
+  description: String!
+  type: TestType!
+  project: Project!
+  requirementLinks: [RequirementTestLink!]!
+  testRuns: [TestRun!]!
+  creator: User!
+  createdAt: DateTime!
+}
+
+type TestRun {
+  id: ID!
+  test: TestCase!
+  iteration: Iteration
+  status: TestRunStatus!
+  notes: String
+  executor: User!
+  executedAt: DateTime!
+}
+
+# ============================================
+# Iterations
+# ============================================
+
+enum IterationStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+type Iteration {
+  id: ID!
+  name: String!
+  iterationIndex: Int!
+  startDate: DateTime!
+  endDate: DateTime!
+  status: IterationStatus!
+  goals: String
+  project: Project!
+  items: [IterationItem!]!
+  testRuns: [TestRun!]!
+}
+
+type IterationItem {
+  id: ID!
+  iteration: Iteration!
+  task: Task
+  requirement: Requirement
+  statusOverride: String
+}
+
+# ============================================
+# Attachments & Jobs
+# ============================================
+
+enum AttachedToType {
+  REQUIREMENT
+  SOLUTION
+  TASK
+  TEST
+  PROJECT
+}
+
+type Attachment {
+  id: ID!
+  fileName: String!
+  mimeType: String!
+  size: Int!
+  s3Key: String!
+  attachedToType: AttachedToType!
+  attachedToId: ID!
+  project: Project!
+  uploader: User!
+  uploadedAt: DateTime!
+  downloadUrl: String! # Presigned URL for download
+}
+
+enum ImportExportType {
+  REQIF_IMPORT
+  REQIF_EXPORT
+  MD_IMPORT
+  MD_EXPORT
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+type ImportExportJob {
+  id: ID!
+  type: ImportExportType!
+  status: JobStatus!
+  project: Project!
+  log: String
+  creator: User!
+  createdAt: DateTime!
+  finishedAt: DateTime
+  downloadUrl: String # For exports
+}
+
+# ============================================
+# Custom Scalars
+# ============================================
+
+scalar DateTime
+
+# ============================================
+# Queries (subset - full list in separate file)
+# ============================================
+
+type Query {
+  # Auth
+  me: User!
+
+  # Projects
+  projects(first: Int, after: String): ProjectConnection!
+  project(id: ID!): Project
+
+  # Requirements
+  requirements(projectId: ID!, first: Int, after: String): RequirementConnection!
+  requirement(id: ID!): Requirement
+  requirementsByStatus(projectId: ID!, status: RequirementStatus!): [Requirement!]!
+
+  # Solutions
+  solutions(projectId: ID!): [Solution!]!
+  solution(id: ID!): Solution
+
+  # Tasks
+  tasks(projectId: ID!, solutionId: ID): [Task!]!
+  task(id: ID!): Task
+
+  # Iterations
+  iterations(projectId: ID!): [Iteration!]!
+  iteration(id: ID!): Iteration
+
+  # Tests
+  testCases(projectId: ID!): [TestCase!]!
+  testCase(id: ID!): TestCase
+  testRuns(testId: ID!): [TestRun!]!
+}
+
+# ============================================
+# Mutations (subset - full list in separate file)
+# ============================================
+
+type Mutation {
+  # Auth
+  login(email: String!, password: String!): AuthPayload!
+  refreshToken(refreshToken: String!): AuthPayload!
+  logout: Boolean!
+
+  # Requirements
+  createRequirement(input: CreateRequirementInput!): Requirement!
+  updateRequirement(id: ID!, input: UpdateRequirementInput!): Requirement!
+  changeRequirementStatus(id: ID!, status: RequirementStatus!): Requirement!
+
+  # Solutions
+  createSolution(input: CreateSolutionInput!): Solution!
+  updateSolution(id: ID!, input: UpdateSolutionInput!): Solution!
+  linkRequirementToSolution(requirementId: ID!, solutionId: ID!, linkType: LinkType!): RequirementSolutionLink!
+
+  # Tasks
+  createTask(input: CreateTaskInput!): Task!
+  updateTask(id: ID!, input: UpdateTaskInput!): Task!
+  changeTaskStatus(id: ID!, status: TaskStatus!): Task!
+
+  # File Upload
+  getUploadUrl(fileName: String!, contentType: String!, attachedToType: AttachedToType!, attachedToId: ID!): UploadUrlPayload!
+  confirmUpload(input: ConfirmUploadInput!): Attachment!
+
+  # Import/Export
+  exportReqIF(projectId: ID!): ImportExportJob!
+  exportMarkdown(projectId: ID!): ImportExportJob!
+  importReqIF(projectId: ID!, s3Key: String!): ImportExportJob!
+}
+
+# ============================================
+# Connection Types (Pagination)
+# ============================================
+
+type ProjectConnection {
+  edges: [ProjectEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ProjectEdge {
+  node: Project!
+  cursor: String!
+}
+
+type RequirementConnection {
+  edges: [RequirementEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type RequirementEdge {
+  node: Requirement!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# ============================================
+# Input Types (subset)
+# ============================================
+
+input CreateRequirementInput {
+  projectId: ID!
+  subjectId: ID
+  parentRequirementId: ID
+  title: String!
+  statement: String!
+  rationale: String
+  tags: [String!]
+  priority: Int
+}
+
+input UpdateRequirementInput {
+  title: String
+  statement: String
+  rationale: String
+  tags: [String!]
+  priority: Int
+  deltaNotes: String
+}
+
+input CreateSolutionInput {
+  projectId: ID!
+  code: String!
+  parentSolutionId: ID
+  title: String!
+  description: String!
+  architectureNotes: String
+  tags: [String!]
+}
+
+input CreateTaskInput {
+  projectId: ID!
+  solutionId: ID!
+  title: String!
+  description: String!
+  type: TaskType!
+  estimate: Float
+}
+
+input UpdateTaskInput {
+  title: String
+  description: String
+  type: TaskType
+  estimate: Float
+  deltaNotes: String
+}
+
+input ConfirmUploadInput {
+  s3Key: String!
+  fileName: String!
+  mimeType: String!
+  size: Int!
+  attachedToType: AttachedToType!
+  attachedToId: ID!
+  projectId: ID!
+}
+
+type UploadUrlPayload {
+  uploadUrl: String!
+  s3Key: String!
+  expiresIn: Int!
+}
