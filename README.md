@@ -1,345 +1,346 @@
-# Prompt 
-you are an IT expert. we are tasked to write an requirements management system which is using an postgres database and s3 buckets and can run in the cloud. we will have projects and they have groups then we can have subjects per project then we have requirements which have main and sub requirements they all need other have versions to be able to deal with future iterations. requirements need to import and export md documents then we have solutions means main or subrequirements many of them can be linked to main solution and the solution can be broken in tasks which can have type and versions as well. they then have an status which lead to be propose din development iterations and iterations and solution share tests please prepare an detailed prd document as we plan to use nest js as an backend and to enable future sso over it. the frontend needs to be an next js react app which is talking graphql for everything in the backend. have an super admin role which can maintain basic data like project types. then have user table which hold login type like mail , gmail etc and encryped password username longname type if active or not. Then have an project table which keeps projects and so on. Enable the project to export and import ReqIF protocol for exchange requirements prepare that document to be consumed by an claude cli speck kit driven environment local development will be using docker compose for nest js and postgres and an extra docker for next js
+# Requirements Management System (A1 ReqMgmt)
 
-# Result 
-A cloud-ready requirements management system will use a NestJS GraphQL backend with PostgreSQL and S3, a Next.js React frontend using GraphQL for all data access, and support ReqIF plus Markdown import/export, versioned requirements/solutions/tasks, and SSO-ready authentication.[1][2][3]
+A comprehensive, cloud-ready requirements management system built with modern web technologies, supporting full traceability from requirements through solutions to tasks and tests.
 
-## Product overview
+## Overview
 
-The system manages projects, requirement hierarchies (main/sub), solutions, tasks, tests, and development iterations, with full traceability and versioning across all artifacts.[4][1]
-It must run in the cloud (Dockerized services), support object storage via S3 for documents and ReqIF/Markdown artifacts, and integrate with SSO in a later phase using a flexible user/identity model.[2][3]
+This system provides:
 
-## Goals and non‑goals
+- **Hierarchical Requirements Management**: Projects, groups, subjects, and nested requirements with full versioning
+- **Solution & Task Tracking**: Link requirements to solutions and break them down into trackable tasks
+- **Iteration Planning**: Organize work into development iterations/sprints
+- **Test Management**: Define test cases and track test runs with requirement traceability
+- **Import/Export**: ReqIF and Markdown format support for interoperability
+- **File Attachments**: S3-backed storage for documents and artifacts
+- **Multi-user Support**: Role-based access control (Super Admin, Project Admin, Contributor, Reviewer)
 
-- Provide a structured, multi-project requirements and solution management tool with import/export via Markdown and ReqIF for interoperability with external RM tools.[5][1][4]
-- Enable a GraphQL-first API for all frontend access, suitable for code-first schema generation in NestJS and Apollo Client consumption in Next.js.[3][6][2]
+## Architecture
 
-Non-goals (v1):  
-- No built-in full-featured test management (only basic test definitions and linkage).  
-- No complex workflow engine; status transitions are simple and configurable but not BPMN-level.
+### Tech Stack
 
-## Users and roles
+**Backend:**
 
-- Super Admin  
-  - Manages global configuration: project types, requirement types, solution types, task types, iteration templates, system-wide settings.[3]
-  - Manages tenants/organizations if multi-tenant is introduced later; can deactivate users and enforce auth policies.[2]
+- NestJS 10.x (TypeScript)
+- GraphQL with Apollo Server
+- PostgreSQL 15+ with Prisma ORM
+- AWS SDK for S3 storage
+- Passport.js for authentication
 
-- Project Admin  
-  - Creates and configures projects, groups, subject structures, permissions (who can edit/approve within project).  
-  - Manages project-level ReqIF import/export and Markdown templates.
+**Frontend:**
 
-- Contributor  
-  - Creates and edits requirements, solutions, tasks, and tests within assigned projects.  
-  - Runs imports, drafts exports (ReqIF, Markdown) subject to permissions.
+- Next.js 14.x with App Router
+- React 18.x
+- Apollo Client 3.x for GraphQL
+- Shadcn/ui components
+- Tailwind CSS
 
-- Reviewer  
-  - Reviews, comments, and approves requirements/solutions/tasks, but cannot change structural configuration.  
-  - Participates in iteration planning and status changes.
+**Monorepo:**
 
-## Core domain model
+- Turborepo for build orchestration
+- pnpm workspaces
+- Shared TypeScript types package
 
-### High-level entities
+### Project Structure
 
-- User  
-- Project  
-- ProjectGroup (within project)  
-- Subject (within project)  
-- Requirement (main/sub with versioning)  
-- RequirementVersion  
-- Solution (main/sub)  
-- SolutionVersion  
-- Task  
-- TaskVersion  
-- TestCase  
-- TestRun / TestResult  
-- Iteration (development iteration / sprint)  
-- Attachments (S3-backed)  
-- ImportExportJob (for ReqIF/Markdown)
+```
+a1ghreqmgmnt/
+├── backend/              # NestJS GraphQL API
+│   ├── src/
+│   │   ├── auth/         # Authentication module
+│   │   ├── users/        # Users module
+│   │   ├── projects/     # Projects module
+│   │   ├── requirements/ # Requirements module
+│   │   ├── solutions/    # Solutions module
+│   │   ├── tasks/        # Tasks module
+│   │   ├── tests/        # Tests module
+│   │   ├── iterations/   # Iterations module
+│   │   └── files/        # File management module
+│   ├── prisma/           # Prisma schema and migrations
+│   └── test/             # Tests
+├── frontend/             # Next.js React app
+│   ├── src/
+│   │   ├── app/          # Next.js App Router pages
+│   │   ├── components/   # React components
+│   │   └── lib/          # GraphQL client, utilities
+│   └── test/
+├── shared/               # Shared TypeScript types
+├── infra/                # Docker Compose, deployment configs
+│   └── docker-compose.yml
+└── specs/                # Feature specifications and plans
+    └── 001-monorepo-setup/
+        ├── spec.md       # Feature specification
+        ├── plan.md       # Implementation plan
+        ├── tasks.md      # Task breakdown
+        ├── data-model.md # Database schema
+        ├── quickstart.md # Quick start guide
+        └── contracts/    # API contracts
+```
 
-### Data model details (PostgreSQL)
+## Quick Start
 
-At minimum, design tables (relational outline, not full DDL):
+### Prerequisites
 
-- users  
-  - id (uuid, pk)  
-  - username (unique)  
-  - long_name  
-  - email (nullable if external-id only)  
-  - login_type (enum: EMAIL_PASSWORD, GOOGLE, GITHUB, OIDC, SAML, etc.)  
-  - password_hash (nullable for federated logins)  
-  - is_active (bool)  
-  - user_type (enum: SUPER_ADMIN, PROJECT_ADMIN, CONTRIBUTOR, REVIEWER)  
-  - created_at, updated_at  
+- Node.js 20+ and pnpm 8+
+- Docker Desktop (macOS/Windows) or Docker Engine (Linux)
+- Git
 
-- projects  
-  - id (uuid, pk)  
-  - name  
-  - code (short unique identifier)  
-  - description  
-  - project_type_id (fk → project_types)  
-  - is_active  
-  - created_by (fk → users)  
-  - created_at, updated_at  
+### Easy Setup with dev.sh Script (Recommended)
 
-- project_types (managed by Super Admin)  
-  - id, name, description, default_settings (jsonb)  
+The project includes a comprehensive management script that handles Docker, infrastructure, and database setup:
 
-- project_groups  
-  - id, project_id (fk)  
-  - name, description, order_index  
+```bash
+# One-command complete setup (first time)
+./dev.sh setup
 
-- subjects  
-  - id, project_id (fk)  
-  - group_id (fk → project_groups, nullable if top-level)  
-  - name, description, order_index  
+# Start all services
+./dev.sh start
+```
 
-- requirements  
-  - id (uuid, pk)  
-  - project_id (fk)  
-  - subject_id (fk)  
-  - parent_requirement_id (nullable fk → requirements for sub-requirements)  
-  - current_version_id (fk → requirement_versions)  
-  - uid (e.g., REQ-123, unique per project)  
-  - status (enum: DRAFT, REVIEW, APPROVED, DEPRECATED, ARCHIVED)  
-  - priority (optional enum or integer)  
-  - created_by, created_at, updated_at  
+That's it! The script will:
 
-- requirement_versions  
-  - id (uuid, pk)  
-  - requirement_id (fk)  
-  - version_number (int, monotonic)  
-  - title  
-  - statement (Markdown)  
-  - rationale (Markdown)  
-  - tags (string array or separate table)  
-  - delta_notes (what changed vs previous)  
-  - effective_from, effective_to (optional)  
-  - created_by, created_at  
+- Check and start Docker automatically
+- Copy environment files
+- Install dependencies
+- Start infrastructure services (PostgreSQL + MinIO)
+- Run database migrations and seeding
+- Start development servers
 
-- solutions  
-  - id, project_id (fk)  
-  - parent_solution_id (nullable fk → solutions for hierarchical solutions)  
-  - current_version_id (fk → solution_versions)  
-  - code (e.g., SOL-001)  
-  - status (enum: DRAFT, DESIGNING, IMPLEMENTING, DONE, DEPRECATED)  
-  - created_by, created_at, updated_at  
+**Common Commands:**
 
-- solution_versions  
-  - id, solution_id  
-  - version_number  
-  - title  
-  - description (Markdown)  
-  - architecture_notes (Markdown)  
-  - tags  
-  - created_by, created_at  
+```bash
+./dev.sh start          # Start all services
+./dev.sh stop           # Stop all services
+./dev.sh restart        # Restart all services
+./dev.sh status         # Check service status
+./dev.sh test           # Run tests
+./dev.sh db-reset       # Reset database
+./dev.sh help           # Show all commands
+```
 
-- requirement_solution_links  
-  - id  
-  - requirement_id  
-  - solution_id  
-  - link_type (enum: SATISFIES, IMPLEMENTS, REFINES)  
+See the [Development Script](#development-script) section below for all available commands.
 
-- tasks  
-  - id, project_id  
-  - solution_id (fk)  
-  - current_version_id (fk → task_versions)  
-  - status (enum: TODO, IN_PROGRESS, BLOCKED, DONE, ARCHIVED)  
-  - created_by, created_at, updated_at  
+### Manual Setup (Alternative)
 
-- task_versions  
-  - id, task_id  
-  - version_number  
-  - title  
-  - description (Markdown)  
-  - type (enum: BACKEND, FRONTEND, DEVOPS, QA, DOCUMENTATION, OTHER)  
-  - estimate (story points or hours)  
-  - created_by, created_at  
+```bash
+# Install dependencies
+pnpm install
 
-- iterations  
-  - id, project_id  
-  - name  
-  - iteration_index (e.g., Sprint 1, 2, …)  
-  - start_date, end_date  
-  - status (PLANNED, ACTIVE, COMPLETED)  
-  - goals (Markdown)  
+# Copy environment files
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 
-- iteration_items  
-  - id, iteration_id  
-  - task_id (fk)  
-  - requirement_id (optional fk for direct planning)  
-  - status_override (optional)  
+# Start infrastructure (PostgreSQL + MinIO)
+cd infra && docker-compose up -d
 
-- tests (test_cases)  
-  - id, project_id  
-  - name  
-  - description (Markdown)  
-  - type (MANUAL, AUTOMATED)  
-  - created_by, created_at  
+# Run database migrations
+cd ../backend
+pnpm prisma migrate dev --name init
+pnpm prisma generate
+pnpm prisma db seed
 
-- requirement_test_links  
-  - id  
-  - requirement_id  
-  - test_id  
+# Start all services
+cd ..
+pnpm dev
+```
 
-- solution_test_links  
-  - id  
-  - solution_id  
-  - test_id  
+**Access Points:**
 
-- test_runs  
-  - id, test_id  
-  - iteration_id (optional)  
-  - status (PASSED, FAILED, BLOCKED, SKIPPED)  
-  - executed_by, executed_at  
-  - notes (Markdown)  
+- Frontend: http://localhost:3000
+- Backend GraphQL API: http://localhost:4000/graphql
+- PostgreSQL: localhost:5432
+- MinIO Console: http://localhost:9001
 
-- attachments  
-  - id, project_id  
-  - attached_to_type (enum: REQUIREMENT, SOLUTION, TASK, TEST, PROJECT)  
-  - attached_to_id  
-  - s3_key  
-  - file_name  
-  - mime_type  
-  - size  
-  - uploaded_by, uploaded_at  
+**Default Credentials:**
 
-- import_export_jobs  
-  - id, project_id  
-  - type (REQIF_IMPORT, REQIF_EXPORT, MD_IMPORT, MD_EXPORT)  
-  - status (QUEUED, RUNNING, COMPLETED, FAILED)  
-  - source_s3_key / result_s3_key  
-  - log (text)  
-  - created_by, created_at, finished_at  
+- Admin: admin@example.com / admin123
+- MinIO: minioadmin / minioadmin
 
-## ReqIF and Markdown handling
+## Development
 
-- ReqIF export  
-  - Transform selected project/subject/group/requirement sets into a ReqIF-compliant XML document with: header metadata, datatype definitions, specification objects, specifications, and relationships.[7][1][5]
-  - Preserve requirement attributes: id, title, statement, rationale, status, and links to other requirements as traceability references in ReqIF structures.[7][5]
+### Development Script
 
-- ReqIF import  
-  - Parse ReqIF XML, map to local attributes, and either create new requirements or update existing ones based on mapping rules (e.g., UID and GUID mapping).[5][7]
-  - Store raw ReqIF file in S3 and keep an import log in import_export_jobs.  
+The `dev.sh` script provides a unified interface for managing the entire development environment. It automatically handles Docker, infrastructure services, database setup, and development servers.
 
-- Markdown import/export  
-  - Requirement-level: import `.md` files where sections map to requirements; each requirement content becomes statement/rationale fields.  
-  - Project-level: export per-project Markdown documents for external editing, including stable UIDs so re-import can diff and create new versions.  
-  - All original MD documents also stored in S3 for traceability.
+#### Main Commands
 
-## Backend architecture (NestJS + GraphQL)
+```bash
+./dev.sh setup          # Complete initial setup (run once)
+./dev.sh start          # Start all services (infra + dev servers)
+./dev.sh stop           # Stop all services
+./dev.sh restart        # Restart all services
+./dev.sh status         # Show status of all services
+./dev.sh help           # Show all available commands
+```
 
-- Tech stack  
-  - NestJS (TypeScript) with GraphQL (Apollo Driver, code-first approach) and TypeORM or Prisma for PostgreSQL.[2][3]
-  - S3 client via AWS SDK (or compatible MinIO in development).  
+#### Infrastructure Commands
 
-- Modules (NestJS)  
-  - AuthModule: handles email/password login and is extensible for future SSO providers via OAuth/OIDC/SAML strategies (e.g., passport-based).  
-  - UsersModule: manages users CRUD (Super Admin) and user profile queries.  
-  - ProjectsModule: projects, groups, subjects, project types.  
-  - RequirementsModule: requirements, versions, links, ReqIF/Markdown mapping services.  
-  - SolutionsModule: solutions, versions, requirement-solution links.  
-  - TasksModule: tasks, versions, iteration association.  
-  - IterationsModule: iterations and planning endpoints.  
-  - TestsModule: test cases and results.  
-  - FilesModule: S3 upload/download, presigned URLs.  
-  - ImportExportModule: job orchestration for ReqIF and Markdown import/export.  
+```bash
+./dev.sh docker         # Check and start Docker if needed
+./dev.sh infra-start   # Start infrastructure only (PostgreSQL, MinIO)
+./dev.sh infra-stop    # Stop infrastructure services
+./dev.sh infra-logs    # Show infrastructure logs in real-time
+```
 
-- GraphQL schema principles  
-  - Code-first with decorators on entity and DTO classes.[3]
-  - Query types for reading: projects, requirements, solutions, tasks, iterations, tests, users.  
-  - Mutations for creating/updating/deleting with version increment logic encapsulated in services.  
-  - Connections and filters for pagination and search within large projects.  
-  - Authorization via guards reading user roles and project memberships from JWT context.
+#### Database Commands
 
-## Frontend architecture (Next.js + GraphQL)
+```bash
+./dev.sh db-setup      # Run migrations and seed database
+./dev.sh db-reset      # Reset database (WARNING: deletes all data!)
+```
 
-- Tech stack  
-  - Next.js (latest) with React, using Apollo Client for GraphQL queries/mutations and caching.[8][9][6]
-  - TypeScript and modern app router; use registerApolloClient or similar setup for SSR-friendly GraphQL.[6]
+#### Development Commands
 
-- Core UI flows  
-  - Authentication  
-    - Login via email/password initially; UI architecture designed to add SSO providers later (Google, GitHub, enterprise IdP).  
-  - Project dashboard  
-    - List of projects; filter by type, active status.  
-    - Project detail showing groups, subjects, and a requirements tree.  
-  - Requirements editor  
-    - Hierarchical tree (main and sub requirements) with version history sidebar.  
-    - Rich Markdown editor for statement/rationale; show tags and status.  
-    - Link panel to attach solutions, tests, and attachments.  
-  - Solutions and tasks  
-    - Solutions list with hierarchy and version detail.  
-    - Tasks board by iteration or solution, with status and type badges.  
-  - Iterations view  
-    - Timeline or list of iterations; per-iteration board of tasks and requirement coverage.  
-  - Import/export UI  
-    - Upload ReqIF or Markdown; monitor ImportExportJob status.  
-    - Export selected scope as ReqIF or Markdown, download from S3.  
+```bash
+./dev.sh install       # Install/update dependencies
+./dev.sh test          # Run all backend tests
+./dev.sh dev           # Start dev servers only (without infra)
+./dev.sh logs          # Show infrastructure logs
+```
 
-## Authentication and SSO readiness
+#### What the Script Does
 
-- Initial auth  
-  - Email/password with secure hashing (e.g., bcrypt or Argon2) and JWT issuance; tokens used by Next.js frontend in GraphQL Authorization headers.  
-  - Login type stored in users.login_type to distinguish local vs external identities.  
+When you run `./dev.sh setup`, it:
 
-- SSO extensibility  
-  - Design AuthModule to accept new providers (Google, GitHub, generic OIDC) without changing core user model.  
-  - Support linking external identities to user accounts, mapping IdP subject identifiers to internal user id.  
+1. Checks if Docker is installed
+2. Starts Docker Desktop automatically (macOS)
+3. Copies `.env.example` files to `.env`
+4. Installs all dependencies with pnpm
+5. Starts PostgreSQL and MinIO containers
+6. Waits for PostgreSQL to be ready
+7. Runs Prisma migrations
+8. Seeds the database with default Super Admin user
+9. Displays URLs and default credentials
 
-## Cloud, S3, and deployment
+When you run `./dev.sh start`, it:
 
-- Storage  
-  - PostgreSQL as primary data store; S3-compatible object store for attachments and ReqIF/Markdown files.[2]
-  - Use environment variables for DB and S3 configuration (host, port, credentials, bucket names).  
+1. Ensures Docker is running
+2. Starts infrastructure services
+3. Starts both backend and frontend dev servers
+4. Shows URLs where services are accessible
 
-- Local development (Docker Compose)  
-  - docker-compose.yml with services:  
-    - postgres (with init scripts)  
-    - nest-api (build from backend Dockerfile, depends_on postgres)  
-    - next-web (build from frontend Dockerfile, depends_on nest-api)  
-    - optional: localstack or MinIO for S3 emulation  
-  - Seed scripts or fixtures for development accounts and sample projects.  
+### Available pnpm Commands
 
-- Cloud deployment  
-  - Container images for NestJS and Next.js; deploy on a container platform (ECS, Kubernetes, etc.).  
-  - Environment-specific configuration for S3, database, and auth providers.  
+```bash
+# Development
+pnpm dev                  # Start all services in dev mode
+pnpm build                # Build all packages
+pnpm clean                # Clean all build artifacts
 
-## Non-functional requirements
+# Testing
+pnpm test                 # Run all tests
+pnpm test:integration     # Run integration tests
+pnpm test:e2e            # Run E2E tests
 
-- Security  
-  - JWT-based auth, role-based access control within GraphQL resolvers.  
-  - Encrypted passwords and secure secret management; HTTPS enforced in production.  
+# Code Quality
+pnpm lint                 # Lint all packages
+pnpm lint:fix            # Fix linting issues
+pnpm format              # Format code with Prettier
+pnpm typecheck           # TypeScript type checking
+```
 
-- Performance and scalability  
-  - Efficient GraphQL queries with dataloader patterns to minimize N+1 issues.[10][2]
-  - Pagination on lists; indexes on key columns (project_id, uid, status, tags).  
+### Database Operations
 
-- Reliability  
-  - All imports/exports via ImportExportJob records with resumable or retryable semantics.  
-  - Version history never deleted; soft delete for main entities.  
+```bash
+cd backend
 
-## Spec Kit / CLI consumption
+# Create new migration
+pnpm prisma migrate dev --name add_new_field
 
-- PRD format  
-  - Save this document (with minimal front matter) as `specs/001-rms/prd.md` so a Claude/Spec Kit CLI can read it as the high-level product definition.[11]
-  - Follow-up specs (spec.md, api.md, data-model.md) can be generated from this PRD, defining concrete DTOs, GraphQL schema, and table DDL for automated code generation.[11]
+# Reset database (WARNING: deletes all data)
+pnpm prisma migrate reset
 
-- Folder structure (suggested)  
-  - `backend/` (NestJS API)  
-  - `frontend/` (Next.js app)  
-  - `infra/` (docker-compose.yml, deployment manifests)  
-  - `specs/001-rms/prd.md` (this file)  
+# View database in Prisma Studio
+pnpm prisma studio
 
-This PRD defines the entities, workflows, architecture, and deployment model needed for your NestJS/PostgreSQL/S3-based requirements management system with ReqIF and Markdown interoperability, and is structured to be directly consumed in a Spec Kit–driven environment.
+# Generate TypeScript types from schema
+pnpm prisma generate
+```
 
-[1](https://www.omg.org/reqif/)
-[2](https://dev.to/nadim_ch0wdhury/how-to-connect-nestjs-backend-with-postgresql-for-graphql-api-ddf)
-[3](https://docs.nestjs.com/graphql/quick-start)
-[4](https://www.microtool.de/en/knowledge-base/what-is-reqif/)
-[5](https://documentation.reqteam.com/reqif-requirements-format/)
-[6](https://dev.to/andisiambuku/how-to-integrate-graphql-in-next-js-using-apollo-client-240p)
-[7](https://visuresolutions.com/alm-guide/reqif/)
-[8](https://www.dhiwise.com/post/a-comprehensive-guide-to-nextjs-apollo-client-integration)
-[9](https://dev.to/alexandrg/how-to-setup-apollo-client-in-order-to-perform-graphql-queries-with-nextjs-41fe)
-[10](https://github.com/Ho-s/NestJS-GraphQL-TypeORM-PostgresQL)
-[11](https://www.perplexity.ai/search/950b6097-b264-44d3-b37f-393033aa3add)
+## Documentation
+
+- **[Specification](specs/001-monorepo-setup/spec.md)**: Complete feature specification with user stories
+- **[Implementation Plan](specs/001-monorepo-setup/plan.md)**: Technical architecture and implementation details
+- **[Data Model](specs/001-monorepo-setup/data-model.md)**: Database schema and entity relationships
+- **[GraphQL Schema](specs/001-monorepo-setup/contracts/graphql-schema-core.graphql)**: API contract
+- **[Constitution](.specify/memory/constitution.md)**: Project governance and quality standards
+- **[Quick Start](specs/001-monorepo-setup/quickstart.md)**: Detailed setup and development guide
+
+## Key Features
+
+### Requirements Management
+
+- Hierarchical structure: Project → Groups → Subjects → Requirements
+- Main and sub-requirements with parent-child relationships
+- Full version history for requirements
+- Status workflow: Draft → Review → Approved
+- Rich metadata: tags, priority, rationale
+
+### Traceability
+
+- Link requirements to solutions (SATISFIES, IMPLEMENTS, REFINES)
+- Link requirements to test cases
+- Track coverage across iterations
+- Bidirectional navigation
+
+### Import/Export
+
+- **ReqIF**: Industry-standard requirements exchange format
+- **Markdown**: Human-readable format for documentation
+- Async job processing with status tracking
+- S3-backed storage for all artifacts
+
+### Collaboration
+
+- Role-based access control
+- Multi-user editing with version control
+- Comment and review workflows
+- Activity tracking
+
+## Contributing
+
+### Code Quality Standards
+
+This project follows strict quality standards defined in the [constitution](.specify/memory/constitution.md):
+
+- TypeScript strict mode enabled
+- 80% backend test coverage required
+- 70% frontend test coverage required
+- TDD approach: tests written first
+- Pre-commit hooks for linting and formatting
+
+### Development Workflow
+
+1. Create feature branch from `main`
+2. Write tests first (TDD)
+3. Implement feature
+4. Ensure all tests pass
+5. Lint and format code
+6. Create pull request
+
+## Deployment
+
+### Docker Build
+
+```bash
+# Build backend
+docker build -f backend/Dockerfile --target production -t reqmgmt-backend .
+
+# Build frontend
+docker build -f frontend/Dockerfile --target production -t reqmgmt-frontend .
+```
+
+### Environment Variables
+
+See `.env.example` files in root, backend, and frontend directories for all available configuration options.
+
+## License
+
+UNLICENSED - Private/Internal Use
+
+## Support
+
+For issues, questions, or contributions, please refer to the project documentation in the `specs/` directory.
+
+---
+
+**Built with**: NestJS • Next.js • PostgreSQL • GraphQL • TypeScript • Turborepo
