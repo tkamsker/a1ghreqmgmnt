@@ -15,7 +15,7 @@
       "prerelease": "alpha"
     }
   ],
-  "repositoryUrl": "https://github.com/your-org/a1ghreqmgmnt.git",
+  "repositoryUrl": "https://github.com/tkamsker/a1ghreqmgmnt.git",
   "tagFormat": "v${version}",
   "plugins": [
     [
