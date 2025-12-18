@@ -13,6 +13,7 @@ Build a cloud-native requirements management system supporting hierarchical proj
 
 **Language/Version**: TypeScript 5.3+
 **Primary Dependencies**:
+
 - Backend: NestJS 10.x, Apollo Server (GraphQL), TypeORM or Prisma (ORM), Passport.js (Auth), AWS SDK (S3)
 - Frontend: Next.js 14.x (App Router), React 18.x, Apollo Client 3.x, TanStack Query (optional for REST fallbacks)
 - Shared: GraphQL Code Generator, class-validator, class-transformer
@@ -20,11 +21,13 @@ Build a cloud-native requirements management system supporting hierarchical proj
 **Storage**: PostgreSQL 15+ (primary data), S3-compatible object storage (attachments, ReqIF/MD files)
 
 **Testing**:
+
 - Backend: Jest (unit), Supertest (integration), Pact (contract)
 - Frontend: Jest + React Testing Library (unit/integration), Playwright or Cypress (E2E)
 - Shared: GraphQL schema testing, API contract validation
 
 **Target Platform**:
+
 - Development: Docker Compose (macOS, Linux, Windows via WSL2)
 - Production: Containerized cloud (AWS ECS, Kubernetes, or similar)
 - Clients: Modern browsers (Chrome, Firefox, Safari, Edge last 2 versions), future mobile (iOS 15+, Android 12+)
@@ -32,11 +35,13 @@ Build a cloud-native requirements management system supporting hierarchical proj
 **Project Type**: Monorepo web application with backend + frontend packages
 
 **Performance Goals**:
+
 - API: <100ms p95 for simple queries, <500ms p95 for complex queries with joins/aggregations, <300ms p95 for mutations
 - Frontend: <3s Time to Interactive on 3G, <200ms route transitions
 - Throughput: 500 concurrent users, 1000 requirements/min for ReqIF import/export
 
 **Constraints**:
+
 - Database connection limit: 20 max connections (pooling required)
 - File upload size: 50MB max per attachment
 - ReqIF/Markdown exports must stream for large projects (>1000 requirements)
@@ -44,6 +49,7 @@ Build a cloud-native requirements management system supporting hierarchical proj
 - Monorepo tooling: NEEDS CLARIFICATION (Nx, Turborepo, or npm/pnpm workspaces)
 
 **Scale/Scope**:
+
 - Users: 500 concurrent, 5,000 total registered users per deployment
 - Data: 100 projects, 10,000 requirements per project, 50,000 total requirements per deployment
 - Versions: Average 5 versions per requirement, 250,000 total requirement versions
@@ -51,7 +57,7 @@ Build a cloud-native requirements management system supporting hierarchical proj
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### ✅ I. Code Quality Standards
 
@@ -65,6 +71,7 @@ Build a cloud-native requirements management system supporting hierarchical proj
 - Dependency scanning via `npm audit` or Snyk in CI pipeline
 
 **Actions**:
+
 - Configure ESLint rulesets: `@typescript-eslint/recommended`, `plugin:@next/next/recommended`, `plugin:prettier/recommended`
 - Setup pre-commit hooks to block commits with linting errors
 - Add JSDoc linting rules to enforce documentation coverage
@@ -80,6 +87,7 @@ Build a cloud-native requirements management system supporting hierarchical proj
 - Test data: Database transactions with rollback in tests; seed data in `backend/src/database/seeds/`
 
 **Actions**:
+
 - Setup Jest with coverage thresholds in `jest.config.js`
 - Configure test database (Postgres in Docker for local dev, ephemeral DB in CI)
 - Implement GraphQL contract tests using `graphql-schema-linter` and schema snapshots
@@ -97,6 +105,7 @@ Build a cloud-native requirements management system supporting hierarchical proj
 - Consistency: Shared layout components, consistent terminology ("Requirement" not "Req"), style guide document
 
 **Actions**:
+
 - Install and configure Shadcn/ui components
 - Add axe-core accessibility testing to E2E suite
 - Create shared layout components (Header, Sidebar, Breadcrumbs)
@@ -112,6 +121,7 @@ Build a cloud-native requirements management system supporting hierarchical proj
 - Monitoring: NEEDS CLARIFICATION (Options: Sentry, New Relic, Datadog, or self-hosted Prometheus + Grafana)
 
 **Actions**:
+
 - Add database indexes in initial migration
 - Implement DataLoader in GraphQL resolvers for batch loading
 - Setup Next.js bundle analyzer to track bundle size
@@ -130,6 +140,7 @@ Build a cloud-native requirements management system supporting hierarchical proj
 - Technical debt: 20% sprint allocation, tracked in GitHub Issues with `tech-debt` label
 
 **Actions**:
+
 - Decide on ORM: TypeORM (more SQL control) vs Prisma (better DX, type safety) - NEEDS RESEARCH
 - Setup Winston with log levels (ERROR, WARN, INFO, DEBUG) and context enrichment
 - Create `.env.example` with all required environment variables documented
@@ -142,6 +153,7 @@ Build a cloud-native requirements management system supporting hierarchical proj
 **Violations**: None
 
 **Clarifications Required**:
+
 1. Monorepo tooling choice (Nx, Turborepo, npm workspaces) - impacts build performance and DX
 2. ORM choice (TypeORM vs Prisma) - impacts migration strategy and type safety
 3. APM tool choice (Sentry, New Relic, Datadog, Prometheus+Grafana) - impacts monitoring capabilities and cost
@@ -299,6 +311,7 @@ a1ghreqmgmnt/                    # Repository root (monorepo)
 ```
 
 **Structure Decision**: Monorepo with backend and frontend as separate packages, communicating via GraphQL API. This structure:
+
 - Enables independent development and deployment of backend and frontend
 - Facilitates code sharing via `shared/` package for types and utilities
 - Supports future mobile clients consuming the same GraphQL API
@@ -320,9 +333,11 @@ a1ghreqmgmnt/                    # Repository root (monorepo)
 ### ✅ Phase 0: Research (Completed)
 
 **Artifacts Generated**:
+
 - `research.md`: Technical decisions documented
 
 **Key Decisions Made**:
+
 1. **Monorepo Tool**: Turborepo with pnpm for fast incremental builds
 2. **ORM**: Prisma for end-to-end type safety and better developer experience
 3. **APM**: Sentry for error tracking and performance monitoring
@@ -335,18 +350,21 @@ a1ghreqmgmnt/                    # Repository root (monorepo)
 ### ✅ Phase 1: Design & Contracts (Completed)
 
 **Artifacts Generated**:
+
 - `data-model.md`: Complete Prisma schema with 20+ entities, relationships, indexes
 - `contracts/graphql-schema-core.graphql`: GraphQL type definitions, queries, mutations
 - `quickstart.md`: Developer onboarding and common workflows
 - `CLAUDE.md`: Updated agent context with TypeScript 5.3+ and PostgreSQL 15+
 
 **Design Highlights**:
+
 - **Versioning Pattern**: Immutable version records for requirements, solutions, tasks
 - **Traceability**: Explicit link tables for requirements→solutions→tasks→tests
 - **Performance**: Strategic indexes on project_id, status, createdAt, uid
 - **Scalability**: Support for 500 concurrent users, 50K requirements, 10K per project
 
 **GraphQL Schema**:
+
 - 20+ types covering authentication, projects, requirements, solutions, tasks, iterations, tests
 - Relay-style pagination with Connection types
 - Presigned S3 URLs for file uploads/downloads
@@ -354,12 +372,12 @@ a1ghreqmgmnt/                    # Repository root (monorepo)
 
 ### Constitution Re-Check (Post-Design)
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| Code Quality | ✅ PASS | TypeScript strict mode, Prisma type safety, ESLint+Prettier |
-| Testing | ✅ PASS | Jest, Supertest, Playwright, contract tests planned |
-| UX Consistency | ✅ PASS | Shadcn/ui design system, WCAG 2.1 AA, responsive design |
-| Performance | ✅ PASS | DataLoader pattern, indexed queries, bundle optimization |
+| Principle       | Status  | Notes                                                                     |
+| --------------- | ------- | ------------------------------------------------------------------------- |
+| Code Quality    | ✅ PASS | TypeScript strict mode, Prisma type safety, ESLint+Prettier               |
+| Testing         | ✅ PASS | Jest, Supertest, Playwright, contract tests planned                       |
+| UX Consistency  | ✅ PASS | Shadcn/ui design system, WCAG 2.1 AA, responsive design                   |
+| Performance     | ✅ PASS | DataLoader pattern, indexed queries, bundle optimization                  |
 | Maintainability | ✅ PASS | Clean architecture (resolvers → services → repos), migrations, monitoring |
 
 **Overall**: All constitution gates passed. Architecture is sound and ready for implementation.
@@ -383,6 +401,7 @@ a1ghreqmgmnt/                    # Repository root (monorepo)
 ### Implementation Phases (After Tasks Generated)
 
 **Phase 1: Foundation (P1 User Stories)**
+
 - Setup: Monorepo, linting, testing, Docker Compose
 - User Authentication (User Story 1)
 - Project Structure (User Story 2)
@@ -390,6 +409,7 @@ a1ghreqmgmnt/                    # Repository root (monorepo)
 - **Deliverable**: MVP with auth + projects + requirements
 
 **Phase 2: Enhanced Capabilities (P2 User Stories)**
+
 - Solutions and Tasks (User Story 4)
 - Iterations (User Story 5)
 - Markdown Import/Export (User Story 8)
@@ -397,6 +417,7 @@ a1ghreqmgmnt/                    # Repository root (monorepo)
 - **Deliverable**: Full traceability and enterprise interoperability
 
 **Phase 3: Additional Features (P3 User Stories)**
+
 - Test Management (User Story 6)
 - File Attachments (User Story 7)
 - **Deliverable**: Complete requirements management platform
@@ -415,6 +436,7 @@ a1ghreqmgmnt/                    # Repository root (monorepo)
 **Status**: ✅ **READY FOR IMPLEMENTATION**
 
 **Generated Artifacts**:
+
 - ✅ `spec.md` - Feature specification with 9 user stories
 - ✅ `plan.md` - This implementation plan (you are here)
 - ✅ `research.md` - Technical decisions and best practices

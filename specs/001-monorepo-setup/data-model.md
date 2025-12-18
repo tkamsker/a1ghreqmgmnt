@@ -7,6 +7,7 @@
 ## Overview
 
 This document defines the complete data model for the Requirements Management System using Prisma schema notation. The model supports:
+
 - Hierarchical projects with groups and subjects
 - Versioned requirements, solutions, and tasks
 - Traceability links between requirements, solutions, tasks, and tests
@@ -87,6 +88,7 @@ model RefreshToken {
 ```
 
 **Validation Rules**:
+
 - `email` must be valid email format (validated by class-validator)
 - `passwordHash` required if `loginType` is `EMAIL_PASSWORD`
 - `username` must be 3-50 characters, alphanumeric + underscore/hyphen
@@ -152,6 +154,7 @@ model Project {
 ```
 
 **Validation Rules**:
+
 - `code` must be 2-10 characters, uppercase letters and numbers only
 - `name` must be 3-100 characters
 
@@ -262,6 +265,7 @@ model Requirement {
 ```
 
 **Validation Rules**:
+
 - `uid` must match pattern `REQ-\d+` or similar project-specific format
 - `priority` must be between 1 and 5 if provided
 
@@ -299,6 +303,7 @@ model RequirementVersion {
 ```
 
 **Versioning Logic**:
+
 - New version created on every edit
 - Previous version's `effectiveTo` set to current timestamp
 - New version's `versionNumber` = max(existing versions) + 1
@@ -560,6 +565,7 @@ model IterationItem {
 ```
 
 **Validation Rules**:
+
 - At least one of `taskId` or `requirementId` must be set (enforced in application logic)
 
 ---
@@ -780,18 +786,18 @@ model ImportExportJob {
 
 Key indexes for query performance:
 
-| Table | Indexed Columns | Purpose |
-|-------|----------------|---------|
-| `requirements` | `projectId` | Filter requirements by project |
-| `requirements` | `status` | Filter by status (DRAFT, APPROVED, etc.) |
-| `requirements` | `createdAt` | Sort by creation date |
-| `requirement_versions` | `requirementId` | Fetch all versions of a requirement |
-| `requirement_solution_links` | `requirementId`, `solutionId` | Bi-directional traceability queries |
-| `tasks` | `solutionId` | Fetch all tasks for a solution |
-| `tasks` | `status` | Filter tasks by status |
-| `iteration_items` | `iterationId` | Fetch all items in an iteration |
-| `test_runs` | `testId` | Fetch all runs for a test case |
-| `attachments` | `attachedToType`, `attachedToId` | Fetch all attachments for an entity |
+| Table                        | Indexed Columns                  | Purpose                                  |
+| ---------------------------- | -------------------------------- | ---------------------------------------- |
+| `requirements`               | `projectId`                      | Filter requirements by project           |
+| `requirements`               | `status`                         | Filter by status (DRAFT, APPROVED, etc.) |
+| `requirements`               | `createdAt`                      | Sort by creation date                    |
+| `requirement_versions`       | `requirementId`                  | Fetch all versions of a requirement      |
+| `requirement_solution_links` | `requirementId`, `solutionId`    | Bi-directional traceability queries      |
+| `tasks`                      | `solutionId`                     | Fetch all tasks for a solution           |
+| `tasks`                      | `status`                         | Filter tasks by status                   |
+| `iteration_items`            | `iterationId`                    | Fetch all items in an iteration          |
+| `test_runs`                  | `testId`                         | Fetch all runs for a test case           |
+| `attachments`                | `attachedToType`, `attachedToId` | Fetch all attachments for an entity      |
 
 ---
 
@@ -840,6 +846,7 @@ Project
 4. **Rollback Support**: Keep migrations reversible where possible
 
 **Migration Commands**:
+
 ```bash
 # Create and apply migration
 pnpm prisma migrate dev --name init_schema

@@ -19,6 +19,7 @@
 ### Rationale
 
 **Requirements**:
+
 - Build caching to speed up repeated builds
 - Parallel task execution for backend and frontend
 - Simple configuration for TypeScript monorepo
@@ -27,19 +28,21 @@
 
 **Options Evaluated**:
 
-| Tool | Pros | Cons | Verdict |
-|------|------|------|---------|
-| **Turborepo** | - Fast incremental builds with remote caching<br>- Parallel execution with smart scheduling<br>- Simple JSON config<br>- Works with any package manager<br>- Great DX | - Less feature-rich than Nx<br>- No built-in code generators | ✅ **RECOMMENDED** |
-| **Nx** | - Powerful code generation<br>- Deep framework integration<br>- Dependency graph visualization<br>- Module boundary enforcement | - Steeper learning curve<br>- More configuration complexity<br>- Overkill for 2-package monorepo | ⚠️ Overkill for initial setup |
-| **pnpm workspaces** | - Simplest setup<br>- No additional dependencies<br>- Native pnpm support | - No build caching<br>- No parallel execution<br>- Manual script coordination | ❌ Insufficient for build performance |
+| Tool                | Pros                                                                                                                                                                  | Cons                                                                                             | Verdict                               |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| **Turborepo**       | - Fast incremental builds with remote caching<br>- Parallel execution with smart scheduling<br>- Simple JSON config<br>- Works with any package manager<br>- Great DX | - Less feature-rich than Nx<br>- No built-in code generators                                     | ✅ **RECOMMENDED**                    |
+| **Nx**              | - Powerful code generation<br>- Deep framework integration<br>- Dependency graph visualization<br>- Module boundary enforcement                                       | - Steeper learning curve<br>- More configuration complexity<br>- Overkill for 2-package monorepo | ⚠️ Overkill for initial setup         |
+| **pnpm workspaces** | - Simplest setup<br>- No additional dependencies<br>- Native pnpm support                                                                                             | - No build caching<br>- No parallel execution<br>- Manual script coordination                    | ❌ Insufficient for build performance |
 
 **Decision Details**:
+
 - **Turborepo** selected for optimal balance of performance and simplicity
 - Configuration via `turbo.json` defining pipelines for `build`, `test`, `lint`, `dev`
 - Cache can be local (initial) and later upgraded to remote cache (Vercel/self-hosted)
 - Use **pnpm** as package manager for efficient disk usage and fast installs
 
 **Implementation**:
+
 ```json
 // turbo.json
 {
@@ -73,6 +76,7 @@
 ### Rationale
 
 **Requirements**:
+
 - Support for complex relationships (versioned entities, many-to-many links)
 - Type-safe database access
 - Migration management
@@ -81,17 +85,18 @@
 
 **Options Evaluated**:
 
-| Feature | TypeORM | Prisma | Winner |
-|---------|---------|--------|--------|
-| **Type Safety** | Decorators, partial inference | Full end-to-end type safety | ✅ Prisma |
-| **Migrations** | Manual SQL or auto-generate | Declarative schema → migrations | ✅ Prisma |
-| **Query Performance** | Raw SQL available, manual optimization | Query engine optimized, DataLoader built-in | 🟰 Tie |
-| **NestJS Integration** | Official @nestjs/typeorm | Community @nestjs/prisma | ✅ TypeORM (official) |
-| **Complex Relationships** | Supports all patterns | Supports all patterns | 🟰 Tie |
-| **Learning Curve** | Higher (Active Record/Repository) | Lower (Prisma Client API) | ✅ Prisma |
-| **Ecosystem Maturity** | Mature, widely used | Newer, rapidly growing | ✅ TypeORM |
+| Feature                   | TypeORM                                | Prisma                                      | Winner                |
+| ------------------------- | -------------------------------------- | ------------------------------------------- | --------------------- |
+| **Type Safety**           | Decorators, partial inference          | Full end-to-end type safety                 | ✅ Prisma             |
+| **Migrations**            | Manual SQL or auto-generate            | Declarative schema → migrations             | ✅ Prisma             |
+| **Query Performance**     | Raw SQL available, manual optimization | Query engine optimized, DataLoader built-in | 🟰 Tie                |
+| **NestJS Integration**    | Official @nestjs/typeorm               | Community @nestjs/prisma                    | ✅ TypeORM (official) |
+| **Complex Relationships** | Supports all patterns                  | Supports all patterns                       | 🟰 Tie                |
+| **Learning Curve**        | Higher (Active Record/Repository)      | Lower (Prisma Client API)                   | ✅ Prisma             |
+| **Ecosystem Maturity**    | Mature, widely used                    | Newer, rapidly growing                      | ✅ TypeORM            |
 
 **Decision Details**:
+
 - **Prisma** selected for superior type safety and developer experience
 - Prisma schema defines all entities, relationships, and indexes in one place
 - Migrations generated declaratively from schema changes (`prisma migrate dev`)
@@ -100,11 +105,13 @@
 - Built-in DataLoader-like batching for N+1 prevention
 
 **Trade-offs Accepted**:
+
 - Prisma is newer than TypeORM (less Stack Overflow content)
 - Community NestJS package vs official (but @nestjs/prisma is well-maintained)
 - Requires learning Prisma schema language (but simpler than decorators)
 
 **Implementation**:
+
 ```prisma
 // prisma/schema.prisma
 generator client {
@@ -161,6 +168,7 @@ model Requirement {
 ```
 
 **Best Practices**:
+
 - Use Prisma transactions for versioning operations
 - Implement soft delete with `deletedAt` field (not shown in example)
 - Use `@@index` directives for frequently queried fields
@@ -175,6 +183,7 @@ model Requirement {
 ### Rationale
 
 **Requirements**:
+
 - Error tracking and alerting
 - Performance monitoring (API response times, slow queries)
 - Frontend error reporting
@@ -183,14 +192,15 @@ model Requirement {
 
 **Options Evaluated**:
 
-| Solution | Error Tracking | Performance Monitoring | Cost | Setup Complexity | Verdict |
-|----------|----------------|------------------------|------|------------------|---------|
-| **Sentry** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Free tier: 5K errors/mo<br>$26/mo for 50K | Low (SDK install) | ✅ **RECOMMENDED** |
-| **New Relic** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | $0 for <100GB/mo<br>Can get expensive | Medium (agent install) | ⚠️ Overkill initially |
-| **Datadog** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | $15/host/mo minimum<br>Expensive at scale | Medium | ❌ Too expensive |
-| **Prometheus + Grafana** | ⭐ | ⭐⭐⭐⭐ | Free (self-hosted) | High (full stack setup) | ⚠️ DIY, no error tracking |
+| Solution                 | Error Tracking | Performance Monitoring | Cost                                      | Setup Complexity        | Verdict                   |
+| ------------------------ | -------------- | ---------------------- | ----------------------------------------- | ----------------------- | ------------------------- |
+| **Sentry**               | ⭐⭐⭐⭐⭐     | ⭐⭐⭐⭐               | Free tier: 5K errors/mo<br>$26/mo for 50K | Low (SDK install)       | ✅ **RECOMMENDED**        |
+| **New Relic**            | ⭐⭐⭐⭐       | ⭐⭐⭐⭐⭐             | $0 for <100GB/mo<br>Can get expensive     | Medium (agent install)  | ⚠️ Overkill initially     |
+| **Datadog**              | ⭐⭐⭐⭐       | ⭐⭐⭐⭐⭐             | $15/host/mo minimum<br>Expensive at scale | Medium                  | ❌ Too expensive          |
+| **Prometheus + Grafana** | ⭐             | ⭐⭐⭐⭐               | Free (self-hosted)                        | High (full stack setup) | ⚠️ DIY, no error tracking |
 
 **Decision Details**:
+
 - **Sentry** for error tracking and performance monitoring (backend + frontend)
 - **Prometheus + Grafana** (optional) for infrastructure metrics (PostgreSQL, CPU, memory) if needed later
 - Sentry free tier (5,000 errors/month) sufficient for MVP
@@ -200,6 +210,7 @@ model Requirement {
 **Implementation**:
 
 **Backend (NestJS)**:
+
 ```typescript
 // src/main.ts
 import * as Sentry from '@sentry/node';
@@ -225,6 +236,7 @@ export class SentryInterceptor implements NestInterceptor {
 ```
 
 **Frontend (Next.js)**:
+
 ```typescript
 // src/lib/sentry.ts
 import * as Sentry from '@sentry/nextjs';
@@ -239,6 +251,7 @@ Sentry.init({
 ```
 
 **Best Practices**:
+
 - Set up Sentry Releases to track which code version caused errors
 - Use custom Sentry tags (userId, projectId, operationType) for filtering
 - Configure alert rules for critical errors (e.g., authentication failures, database connection errors)
@@ -251,12 +264,14 @@ Sentry.init({
 ### GraphQL Best Practices for NestJS
 
 **Schema Design**:
+
 - Use Code-First approach with `@nestjs/graphql` decorators
 - Define clear separation: DTOs for input, Entities for output
 - Use DataLoader for batch loading to prevent N+1 queries
 - Implement pagination with `Connection` pattern (Relay spec)
 
 **Example**:
+
 ```typescript
 // requirements.resolver.ts
 @Resolver(() => Requirement)
@@ -285,12 +300,14 @@ export class RequirementsResolver {
 ### Authentication & Authorization Best Practices
 
 **Strategy**:
+
 - Use Passport Local Strategy for email/password login
 - Use Passport JWT Strategy for API authentication
 - Implement refresh tokens (30-day expiry) stored in database with access tokens (24-hour expiry)
 - Add custom GraphQL guards for role-based access control
 
 **Example**:
+
 ```typescript
 @Roles(UserType.PROJECT_ADMIN, UserType.SUPER_ADMIN)
 @UseGuards(GqlAuthGuard, RolesGuard)
@@ -303,12 +320,14 @@ async createProject(@Args('input') input: CreateProjectInput, @CurrentUser() use
 ### File Upload Best Practices (S3)
 
 **Strategy**:
+
 - Use presigned URLs for direct client → S3 uploads (avoids backend proxy)
 - Backend generates presigned POST URL with policy (size limit, file type)
 - Client uploads directly to S3 with progress indication
 - Client notifies backend when upload completes to create Attachment record
 
 **Flow**:
+
 1. Client requests upload URL: `mutation getUploadUrl($filename, $contentType)`
 2. Backend generates presigned URL valid for 15 minutes
 3. Client uploads file directly to S3 using presigned URL
@@ -317,21 +336,25 @@ async createProject(@Args('input') input: CreateProjectInput, @CurrentUser() use
 ### Testing Best Practices
 
 **Unit Tests**:
+
 - Mock Prisma Client using `jest.mock` or create mock Prisma instance
 - Test services in isolation with mocked dependencies
 - Test GraphQL resolvers with mocked services
 
 **Integration Tests**:
+
 - Use test database (separate from dev database)
 - Wrap tests in transactions and rollback after each test
 - Seed necessary data (users, projects) in `beforeEach`
 
 **E2E Tests**:
+
 - Use Playwright or Cypress for frontend E2E
 - Test critical user journeys (P1 user stories)
 - Run against docker-compose test environment
 
 **Contract Tests**:
+
 - Validate GraphQL schema doesn't break backward compatibility
 - Use `graphql-schema-linter` for schema validation rules
 - Snapshot test GraphQL responses for regression detection
@@ -343,12 +366,14 @@ async createProject(@Args('input') input: CreateProjectInput, @CurrentUser() use
 ### Local Development Environment
 
 **Services Required**:
+
 - PostgreSQL 15 (primary database)
 - MinIO (S3-compatible object storage)
 - Backend API (NestJS)
 - Frontend (Next.js)
 
 **Example docker-compose.yml**:
+
 ```yaml
 version: '3.8'
 
@@ -361,12 +386,12 @@ services:
       POSTGRES_PASSWORD: rms_password
       POSTGRES_DB: rms_db
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rms_user"]
+      test: ['CMD-SHELL', 'pg_isready -U rms_user']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -379,12 +404,12 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -405,7 +430,7 @@ services:
       JWT_SECRET: dev-secret-change-in-production
       NODE_ENV: development
     ports:
-      - "4000:4000"
+      - '4000:4000'
     volumes:
       - ./backend:/app/backend
       - /app/backend/node_modules
@@ -427,7 +452,7 @@ services:
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN}
       NODE_ENV: development
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - ./frontend:/app/frontend
       - /app/frontend/node_modules
@@ -442,6 +467,7 @@ volumes:
 ```
 
 **Usage**:
+
 ```bash
 # Start all services
 docker-compose up -d
@@ -467,17 +493,18 @@ docker-compose up -d
 
 ## Summary of Decisions
 
-| Decision Area | Choice | Key Benefit |
-|---------------|--------|-------------|
-| **Monorepo Tool** | Turborepo + pnpm | Fast incremental builds with caching |
-| **ORM** | Prisma | End-to-end type safety, better DX |
-| **APM** | Sentry | Best error tracking, affordable, easy integration |
-| **Package Manager** | pnpm 8.x | Efficient disk usage, fast installs |
-| **Auth Strategy** | JWT + Refresh Tokens | Stateless, scalable, mobile-friendly |
-| **File Upload** | S3 Presigned URLs | Offload bandwidth from backend |
-| **Testing Framework** | Jest + Playwright | Comprehensive coverage from unit to E2E |
+| Decision Area         | Choice               | Key Benefit                                       |
+| --------------------- | -------------------- | ------------------------------------------------- |
+| **Monorepo Tool**     | Turborepo + pnpm     | Fast incremental builds with caching              |
+| **ORM**               | Prisma               | End-to-end type safety, better DX                 |
+| **APM**               | Sentry               | Best error tracking, affordable, easy integration |
+| **Package Manager**   | pnpm 8.x             | Efficient disk usage, fast installs               |
+| **Auth Strategy**     | JWT + Refresh Tokens | Stateless, scalable, mobile-friendly              |
+| **File Upload**       | S3 Presigned URLs    | Offload bandwidth from backend                    |
+| **Testing Framework** | Jest + Playwright    | Comprehensive coverage from unit to E2E           |
 
 All decisions align with constitution principles:
+
 - ✅ Code Quality: TypeScript strict mode, Prisma type safety
 - ✅ Testing: Comprehensive test strategy across all layers
 - ✅ Performance: DataLoader, indexes, caching with Turborepo

@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "create an monorepo application with an nest js backend against an postgress database and an frontend based on an next js using graphql to have later an more easy apporach for mobile app. take requirements from @README.md step by step"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - User Authentication and Access Control (Priority: P1)
 
@@ -182,7 +182,7 @@ As a Project Admin, I need to import and export requirements in ReqIF format, so
 - **What happens when multiple users edit the same requirement simultaneously?** Last write wins with new version creation; both versions are preserved in history with timestamps to detect conflicts.
 - **What happens when a Project Admin tries to delete a project with active requirements?** System prompts for confirmation warning about data loss; soft delete is preferred with ability to restore within a retention period.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -240,7 +240,7 @@ As a Project Admin, I need to import and export requirements in ReqIF format, so
 - **Attachment**: File reference with storage key, attached entity type (REQUIREMENT, SOLUTION, TASK, TEST, PROJECT), entity ID, filename, mime type, size, uploader, and upload timestamp
 - **ImportExportJob**: Asynchronous job record for ReqIF/Markdown import/export with type, status (QUEUED, RUNNING, COMPLETED, FAILED), source/result storage keys, log, creator, start/finish timestamps
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

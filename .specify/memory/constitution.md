@@ -148,11 +148,13 @@ These gates MUST be verified before code merges to main branch:
 ## Development Workflow
 
 ### Branch Strategy
+
 - `main`: Production-ready code; protected branch
 - `feature/###-feature-name`: Feature branches created from main
 - Feature branches deleted after merge
 
 ### Pull Request Process
+
 1. Create feature branch from main
 2. Implement feature following TDD (tests first, then implementation)
 3. Ensure all Quality Gates pass locally
@@ -161,6 +163,7 @@ These gates MUST be verified before code merges to main branch:
 6. Squash and merge after approval
 
 ### Commit Standards
+
 - Use conventional commits format: `type(scope): description`
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 - Example: `feat(requirements): add ReqIF import validation`
@@ -168,10 +171,13 @@ These gates MUST be verified before code merges to main branch:
 ## Governance
 
 ### Constitution Authority
+
 This constitution supersedes all other practices and guidelines. When conflicts arise, constitution principles take precedence.
 
 ### Amendment Procedure
+
 Amendments require:
+
 1. Written proposal documenting rationale and impact
 2. Review by technical lead and stakeholders
 3. Version increment following semantic versioning:
@@ -182,17 +188,20 @@ Amendments require:
 5. Propagation of changes to all dependent templates (plan, spec, tasks, checklist)
 
 ### Compliance Review
+
 - All pull requests MUST be reviewed for constitution compliance
 - Architecture decisions MUST be justified against constitution principles
 - Any violations MUST be documented in plan.md "Complexity Tracking" section with explicit justification
 
 ### Enforcement
+
 - Pre-commit hooks enforce linting and formatting
 - CI pipeline enforces testing and coverage gates
 - Pull request template includes constitution checklist
 - Code review guidelines reference constitution principles
 
 ### Continuous Improvement
+
 - Constitution reviewed quarterly for relevance
 - Metrics collected on gate failures and bottlenecks
 - Principles adjusted based on team retrospectives and project evolution

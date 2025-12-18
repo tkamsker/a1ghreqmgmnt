@@ -68,10 +68,12 @@ pnpm --filter frontend dev # Frontend on :3000
 ### Default Credentials
 
 **Super Admin (seeded)**:
+
 - Email: `admin@example.com`
 - Password: `admin123` (change immediately in production)
 
 **MinIO**:
+
 - Access Key: `minioadmin`
 - Secret Key: `minioadmin`
 

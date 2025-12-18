@@ -22,6 +22,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.config.js",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
