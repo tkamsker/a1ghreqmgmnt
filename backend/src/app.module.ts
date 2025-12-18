@@ -22,7 +22,7 @@ import { UsersModule } from './users/users.module';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
       playground: process.env.NODE_ENV !== 'production',
-      context: ({ req, res }) => ({ req, res }),
+      context: ({ req, res }: any) => ({ req, res }),
       formatError: (error) => {
         // Custom error formatting
         return {

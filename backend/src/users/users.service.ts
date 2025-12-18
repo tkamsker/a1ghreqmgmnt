@@ -113,7 +113,7 @@ export class UsersService {
     }
 
     // Hash password if provided
-    const updateData: Prisma.UserUpdateInput = {
+    const updateData: any = {
       ...updateUserInput,
     };
 

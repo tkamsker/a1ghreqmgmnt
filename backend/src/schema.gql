@@ -1,0 +1,75 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthPayload {
+  accessToken: String!
+  refreshToken: String!
+  user: User!
+}
+
+input CreateUserInput {
+  email: String
+  loginType: String!
+  longName: String!
+  password: String
+  userType: String!
+  username: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Type of login authentication"""
+enum LoginType {
+  EMAIL_PASSWORD
+  GITHUB
+  GOOGLE
+  OIDC
+  SAML
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+  deleteUser(id: String!): Boolean!
+  login(email: String!, password: String!): AuthPayload!
+  logout: Boolean!
+  refreshToken(refreshToken: String!): AuthPayload!
+  updateUser(id: String!, input: UpdateUserInput!): User!
+}
+
+type Query {
+  me: User!
+  user(id: String!): User!
+  users: [User!]!
+}
+
+input UpdateUserInput {
+  email: String
+  isActive: Boolean
+  longName: String
+  password: String
+  username: String
+}
+
+type User {
+  createdAt: DateTime!
+  email: String
+  id: ID!
+  isActive: Boolean!
+  loginType: LoginType!
+  longName: String!
+  updatedAt: DateTime!
+  userType: UserType!
+  username: String!
+}
+
+"""User role type"""
+enum UserType {
+  CONTRIBUTOR
+  PROJECT_ADMIN
+  REVIEWER
+  SUPER_ADMIN
+}

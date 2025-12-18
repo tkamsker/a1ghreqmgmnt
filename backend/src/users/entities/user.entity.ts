@@ -15,31 +15,31 @@ registerEnumType(UserType, {
 @ObjectType()
 export class User {
   @Field(() => ID)
-  id: string;
+  id!: string;
 
   @Field()
-  username: string;
+  username!: string;
 
   @Field()
-  longName: string;
+  longName!: string;
 
   @Field({ nullable: true })
   email?: string;
 
   @Field(() => LoginType)
-  loginType: LoginType;
+  loginType!: LoginType;
 
   @Field(() => UserType)
-  userType: UserType;
+  userType!: UserType;
 
   @Field()
-  isActive: boolean;
+  isActive!: boolean;
 
   @Field()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Field()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // passwordHash is intentionally not exposed in GraphQL
 }

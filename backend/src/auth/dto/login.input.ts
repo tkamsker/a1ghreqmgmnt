@@ -6,10 +6,10 @@ export class LoginInput {
   @Field()
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  password: string;
+  password!: string;
 }

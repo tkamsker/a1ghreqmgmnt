@@ -8,12 +8,12 @@ export class CreateUserInput {
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
-  username: string;
+  username!: string;
 
   @Field()
   @IsString()
   @IsNotEmpty()
-  longName: string;
+  longName!: string;
 
   @Field({ nullable: true })
   @IsEmail()
@@ -28,9 +28,9 @@ export class CreateUserInput {
 
   @Field(() => String)
   @IsEnum(LoginType)
-  loginType: LoginType;
+  loginType!: LoginType;
 
   @Field(() => String)
   @IsEnum(UserType)
-  userType: UserType;
+  userType!: UserType;
 }
