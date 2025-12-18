@@ -9,6 +9,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { AppConfigModule } from './config/config.module';
 import { PrismaModule } from './database/prisma.module';
+import { ProjectsModule } from './projects/projects.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -22,7 +23,7 @@ import { UsersModule } from './users/users.module';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
       playground: process.env.NODE_ENV !== 'production',
-      context: ({ req, res }: any) => ({ req, res }),
+      context: ({ req, res }: { req: Request; res: Response }) => ({ req, res }),
       formatError: (error) => {
         // Custom error formatting
         return {
@@ -42,6 +43,7 @@ import { UsersModule } from './users/users.module';
     AppConfigModule,
     AuthModule,
     UsersModule,
+    ProjectsModule,
   ],
   controllers: [],
   providers: [],
