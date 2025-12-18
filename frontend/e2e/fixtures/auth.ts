@@ -49,8 +49,14 @@ export async function login(page: Page, user: TestUser) {
  * Logout helper function
  */
 export async function logout(page: Page) {
-  // Click user menu or logout button
-  await page.getByRole('button', { name: /logout/i }).click();
+  // Click user menu dropdown (shows user's name)
+  await page
+    .getByRole('button', { name: /admin|contributor/i })
+    .first()
+    .click();
+
+  // Click "Log out" menu item
+  await page.getByRole('menuitem', { name: /log out/i }).click();
 
   // Wait for redirect to login
   await page.waitForURL('/login');

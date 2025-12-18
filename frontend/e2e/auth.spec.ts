@@ -67,8 +67,12 @@ test.describe('Authentication', () => {
     await page.getByRole('button', { name: /sign in/i }).click();
     await page.waitForURL('/dashboard');
 
-    // Find and click logout button
-    await page.getByRole('button', { name: /logout/i }).click();
+    // Open user menu dropdown and click logout
+    await page
+      .getByRole('button', { name: /admin|contributor/i })
+      .first()
+      .click();
+    await page.getByRole('menuitem', { name: /log out/i }).click();
 
     // Should redirect to login
     await page.waitForURL('/login');

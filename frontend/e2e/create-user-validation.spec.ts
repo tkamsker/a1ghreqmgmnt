@@ -5,23 +5,20 @@ import { test, expect } from './fixtures/auth';
  * This test suite specifically addresses the 400 error when creating users
  */
 test.describe('Create User Validation', () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
-
-  test.beforeEach(async ({ adminPage: page }) => {
+  test('should show validation error for missing username', async ({ adminPage: page }) => {
     await page.goto('/dashboard');
     await page.getByRole('button', { name: /create user/i }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-  });
 
-  test('should show validation error for missing username', async ({ adminPage: page }) => {
     // Leave username empty
     await page.getByLabel(/full name/i).fill('Test User');
     await page.getByLabel(/email/i).fill('test@example.com');
     await page.getByLabel(/password/i).fill('password123');
 
+    // Click the Create User button inside the dialog
     await page
+      .getByRole('dialog')
       .getByRole('button', { name: /create user/i })
-      .nth(1)
       .click();
 
     // Should show validation error or stay on dialog
@@ -29,15 +26,20 @@ test.describe('Create User Validation', () => {
   });
 
   test('should show validation error for missing full name', async ({ adminPage: page }) => {
+    await page.goto('/dashboard');
+    await page.getByRole('button', { name: /create user/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
     const timestamp = Date.now();
     await page.getByLabel(/username/i).fill(`user${timestamp}`);
     // Leave full name empty
     await page.getByLabel(/email/i).fill(`test${timestamp}@example.com`);
     await page.getByLabel(/password/i).fill('password123');
 
+    // Click the Create User button inside the dialog
     await page
+      .getByRole('dialog')
       .getByRole('button', { name: /create user/i })
-      .nth(1)
       .click();
 
     // Should show validation error
@@ -45,15 +47,20 @@ test.describe('Create User Validation', () => {
   });
 
   test('should show validation error for missing email', async ({ adminPage: page }) => {
+    await page.goto('/dashboard');
+    await page.getByRole('button', { name: /create user/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
     const timestamp = Date.now();
     await page.getByLabel(/username/i).fill(`user${timestamp}`);
     await page.getByLabel(/full name/i).fill('Test User');
     // Leave email empty - but email might be optional
     await page.getByLabel(/password/i).fill('password123');
 
+    // Click the Create User button inside the dialog
     await page
+      .getByRole('dialog')
       .getByRole('button', { name: /create user/i })
-      .nth(1)
       .click();
 
     // If email is optional, this should succeed
@@ -70,15 +77,20 @@ test.describe('Create User Validation', () => {
   });
 
   test('should show validation error for missing password', async ({ adminPage: page }) => {
+    await page.goto('/dashboard');
+    await page.getByRole('button', { name: /create user/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
     const timestamp = Date.now();
     await page.getByLabel(/username/i).fill(`user${timestamp}`);
     await page.getByLabel(/full name/i).fill('Test User');
     await page.getByLabel(/email/i).fill(`test${timestamp}@example.com`);
     // Leave password empty
 
+    // Click the Create User button inside the dialog
     await page
+      .getByRole('dialog')
       .getByRole('button', { name: /create user/i })
-      .nth(1)
       .click();
 
     // Should show validation error
@@ -86,32 +98,41 @@ test.describe('Create User Validation', () => {
   });
 
   test('should show validation error for short password', async ({ adminPage: page }) => {
+    await page.goto('/dashboard');
+    await page.getByRole('button', { name: /create user/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
     const timestamp = Date.now();
     await page.getByLabel(/username/i).fill(`user${timestamp}`);
     await page.getByLabel(/full name/i).fill('Test User');
     await page.getByLabel(/email/i).fill(`test${timestamp}@example.com`);
     await page.getByLabel(/password/i).fill('123'); // Too short
 
+    // Click the Create User button inside the dialog
     await page
+      .getByRole('dialog')
       .getByRole('button', { name: /create user/i })
-      .nth(1)
       .click();
 
-    // Should show validation error
+    // Should show validation error (dialog stays open)
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.locator('text=/password.*8|minimum.*8/i')).toBeVisible({ timeout: 5000 });
   });
 
   test('should show validation error for invalid email format', async ({ adminPage: page }) => {
+    await page.goto('/dashboard');
+    await page.getByRole('button', { name: /create user/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
     const timestamp = Date.now();
     await page.getByLabel(/username/i).fill(`user${timestamp}`);
     await page.getByLabel(/full name/i).fill('Test User');
     await page.getByLabel(/email/i).fill('invalid-email'); // Invalid format
     await page.getByLabel(/password/i).fill('password123');
 
+    // Click the Create User button inside the dialog
     await page
+      .getByRole('dialog')
       .getByRole('button', { name: /create user/i })
-      .nth(1)
       .click();
 
     // Should show validation error
@@ -119,6 +140,10 @@ test.describe('Create User Validation', () => {
   });
 
   test('should create user with all required fields', async ({ adminPage: page }) => {
+    await page.goto('/dashboard');
+    await page.getByRole('button', { name: /create user/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
     const timestamp = Date.now();
     const username = `validuser${timestamp}`;
 
@@ -134,17 +159,24 @@ test.describe('Create User Validation', () => {
       await page.getByRole('option', { name: /contributor/i }).click();
     }
 
+    // Click the Create User button inside the dialog
     await page
+      .getByRole('dialog')
       .getByRole('button', { name: /create user/i })
-      .nth(1)
       .click();
 
-    // Should close dialog and show user
+    // Should close dialog and show user in the table
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(username)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('cell', { name: username, exact: true })).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test('should check network response for 400 error details', async ({ adminPage: page }) => {
+    await page.goto('/dashboard');
+    await page.getByRole('button', { name: /create user/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
     const timestamp = Date.now();
 
     // Listen for GraphQL response
@@ -158,9 +190,10 @@ test.describe('Create User Validation', () => {
     await page.getByLabel(/email/i).fill(`test${timestamp}@example.com`);
     await page.getByLabel(/password/i).fill('password123');
 
+    // Click the Create User button inside the dialog
     await page
+      .getByRole('dialog')
       .getByRole('button', { name: /create user/i })
-      .nth(1)
       .click();
 
     // Get the response

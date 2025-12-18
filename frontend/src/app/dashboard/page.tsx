@@ -90,7 +90,7 @@ function DashboardContent() {
             longName: formData.longName,
             password: formData.password,
             userType: formData.userType,
-            loginType: 'LOCAL',
+            loginType: 'EMAIL_PASSWORD',
           },
         },
       });
