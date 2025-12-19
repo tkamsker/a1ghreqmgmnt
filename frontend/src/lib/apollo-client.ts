@@ -24,11 +24,18 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
     graphQLErrors.forEach(({ message, locations, path, extensions }) => {
       console.error(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`);
 
-      // Handle authentication errors
-      if (extensions?.code === 'UNAUTHENTICATED') {
+      // Handle authentication errors - check both extension code and message
+      const isAuthError =
+        extensions?.code === 'UNAUTHENTICATED' ||
+        message.toLowerCase().includes('unauthorized') ||
+        message.toLowerCase().includes('unauthenticated');
+
+      if (isAuthError) {
         if (typeof window !== 'undefined') {
+          console.log('Authentication error detected, clearing tokens and redirecting to login');
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
           window.location.href = '/login';
         }
       }

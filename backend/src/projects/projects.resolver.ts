@@ -1,16 +1,18 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
-import { ProjectsService } from './projects.service';
-import { Project, ProjectGroup, Subject } from './entities/project.entity';
-import { CreateProjectInput } from './dto/create-project.input';
-import { UpdateProjectInput } from './dto/update-project.input';
-import { CreateProjectGroupInput } from './dto/create-project-group.input';
-import { CreateSubjectInput } from './dto/create-subject.input';
+import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { UserType } from '@prisma/client';
+
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
-import { UserType } from '@prisma/client';
+
+import { CreateProjectGroupInput } from './dto/create-project-group.input';
+import { CreateProjectInput } from './dto/create-project.input';
+import { CreateSubjectInput } from './dto/create-subject.input';
+import { UpdateProjectInput } from './dto/update-project.input';
+import { Project, ProjectGroup, Subject } from './entities/project.entity';
+import { ProjectsService } from './projects.service';
 
 @Resolver(() => Project)
 @UseGuards(GqlAuthGuard, RolesGuard)
@@ -44,10 +46,7 @@ export class ProjectsResolver {
 
   @Mutation(() => Project)
   @Roles(UserType.SUPER_ADMIN, UserType.PROJECT_ADMIN)
-  async updateProject(
-    @Args('id') id: string,
-    @Args('input') input: UpdateProjectInput,
-  ) {
+  async updateProject(@Args('id') id: string, @Args('input') input: UpdateProjectInput) {
     return this.projectsService.update(id, input);
   }
 
