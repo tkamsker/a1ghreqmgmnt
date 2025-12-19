@@ -8,6 +8,28 @@ type AuthPayload {
   user: User!
 }
 
+input CreateProjectGroupInput {
+  description: String
+  name: String!
+  orderIndex: Int
+  projectId: String!
+}
+
+input CreateProjectInput {
+  code: String!
+  description: String
+  name: String!
+  projectTypeId: String!
+}
+
+input CreateSubjectInput {
+  description: String
+  groupId: String
+  name: String!
+  orderIndex: Int
+  projectId: String!
+}
+
 input CreateUserInput {
   email: String
   loginType: String!
@@ -32,18 +54,71 @@ enum LoginType {
 }
 
 type Mutation {
+  createProject(input: CreateProjectInput!): Project!
+  createProjectGroup(input: CreateProjectGroupInput!): ProjectGroup!
+  createSubject(input: CreateSubjectInput!): Subject!
   createUser(input: CreateUserInput!): User!
+  deleteProject(id: String!): Boolean!
+  deleteProjectGroup(id: String!): Boolean!
+  deleteSubject(id: String!): Boolean!
   deleteUser(id: String!): Boolean!
   login(email: String!, password: String!): AuthPayload!
   logout: Boolean!
   refreshToken(refreshToken: String!): AuthPayload!
+  updateProject(id: String!, input: UpdateProjectInput!): Project!
+  updateProjectGroup(description: String, id: String!, name: String!): ProjectGroup!
+  updateSubject(description: String, id: String!, name: String!): Subject!
   updateUser(id: String!, input: UpdateUserInput!): User!
+}
+
+type Project {
+  code: String!
+  createdAt: DateTime!
+  createdBy: String!
+  description: String
+  groups: [ProjectGroup!]
+  id: ID!
+  isActive: Boolean!
+  name: String!
+  projectTypeId: String!
+  subjects: [Subject!]
+  updatedAt: DateTime!
+}
+
+type ProjectGroup {
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  name: String!
+  orderIndex: Float!
+  projectId: String!
+  subjects: [Subject!]
+  updatedAt: DateTime!
 }
 
 type Query {
   me: User!
+  project(id: String!): Project!
+  projects: [Project!]!
   user(id: String!): User!
   users: [User!]!
+}
+
+type Subject {
+  createdAt: DateTime!
+  description: String
+  groupId: String
+  id: ID!
+  name: String!
+  orderIndex: Float!
+  projectId: String!
+  updatedAt: DateTime!
+}
+
+input UpdateProjectInput {
+  description: String
+  isActive: Boolean
+  name: String
 }
 
 input UpdateUserInput {

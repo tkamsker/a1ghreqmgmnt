@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery, useMutation } from '@apollo/client';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Header } from '@/components/layout/Header';
@@ -31,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useAuth } from '@/lib/auth-context';
 import { UserType } from '@/lib/auth-context';
 import { CREATE_USER, UPDATE_USER, REMOVE_USER } from '@/lib/graphql/mutations/users';
 import { GET_USERS } from '@/lib/graphql/queries/users';
@@ -54,6 +56,8 @@ interface ErrorWithGraphQL extends Error {
 }
 
 function DashboardContent() {
+  const router = useRouter();
+  const { logout } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -69,6 +73,19 @@ function DashboardContent() {
   const [createUser, { loading: creating }] = useMutation(CREATE_USER);
   const [updateUser, { loading: updating }] = useMutation(UPDATE_USER);
   const [removeUser, { loading: deleting }] = useMutation(REMOVE_USER);
+
+  // Handle unauthorized errors by logging out
+  useEffect(() => {
+    if (error) {
+      const errorMessage = error.message.toLowerCase();
+      if (errorMessage.includes('unauthorized') || errorMessage.includes('unauthenticated')) {
+        console.log('Unauthorized error in dashboard, logging out...');
+        logout().then(() => {
+          router.push('/login');
+        });
+      }
+    }
+  }, [error, logout, router]);
 
   const resetForm = () => {
     setFormData({
@@ -176,10 +193,33 @@ function DashboardContent() {
   }
 
   if (error) {
+    const errorMessage = error.message.toLowerCase();
+    const isAuthError =
+      errorMessage.includes('unauthorized') || errorMessage.includes('unauthenticated');
+
+    if (isAuthError) {
+      // Show redirecting message for auth errors (useEffect will handle redirect)
+      return (
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Session expired. Redirecting to login...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // Show error for non-auth errors
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center text-destructive">
-          <p>Error loading users: {error.message}</p>
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 max-w-md">
+          <h2 className="text-lg font-semibold text-destructive mb-2">Error Loading Users</h2>
+          <p className="text-sm text-destructive/90">{error.message}</p>
+          <Button onClick={() => refetch()} variant="outline" className="mt-4">
+            Try Again
+          </Button>
         </div>
       </div>
     );

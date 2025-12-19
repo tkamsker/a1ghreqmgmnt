@@ -30,6 +30,20 @@ export function Header() {
           <Link href="/dashboard" className="mr-6 flex items-center space-x-2">
             <span className="font-bold">Requirements Management System</span>
           </Link>
+          <nav className="flex items-center space-x-6 text-sm font-medium">
+            <Link
+              href="/dashboard"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Dashboard
+            </Link>
+            <Link
+              href="/projects"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Projects
+            </Link>
+          </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {user && (

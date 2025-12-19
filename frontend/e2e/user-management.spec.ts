@@ -139,6 +139,7 @@ test.describe('User Management', () => {
 
     // Now delete the user
     const row = page.locator(`tr:has-text("${username}")`);
+    await expect(row).toBeVisible();
 
     // Handle confirmation dialog - set up BEFORE clicking
     page.once('dialog', async (dialog) => {
@@ -146,8 +147,10 @@ test.describe('User Management', () => {
       await dialog.accept();
     });
 
-    // Click delete button
-    await row.getByRole('button', { name: /delete/i }).click();
+    // Click delete button - wait for it to be stable and use force click for mobile viewports
+    const deleteButton = row.getByRole('button', { name: /delete/i });
+    await deleteButton.waitFor({ state: 'visible', timeout: 5000 });
+    await deleteButton.click({ force: true });
 
     // User should be removed from list
     await expect(page.getByRole('cell', { name: username, exact: true })).not.toBeVisible({
