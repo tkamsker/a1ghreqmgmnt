@@ -8,6 +8,39 @@ type AuthPayload {
   user: User!
 }
 
+input CreateProjectGroupInput {
+  description: String
+  name: String!
+  orderIndex: Int
+  projectId: String!
+}
+
+input CreateProjectInput {
+  code: String!
+  description: String
+  name: String!
+  projectTypeId: String!
+}
+
+input CreateRequirementInput {
+  parentRequirementId: String
+  priority: Int
+  projectId: String!
+  rationale: String
+  statement: String!
+  subjectId: String
+  tags: [String!]
+  title: String!
+}
+
+input CreateSubjectInput {
+  description: String
+  groupId: String
+  name: String!
+  orderIndex: Int
+  projectId: String!
+}
+
 input CreateUserInput {
   email: String
   loginType: String!
@@ -32,18 +65,132 @@ enum LoginType {
 }
 
 type Mutation {
+  createProject(input: CreateProjectInput!): Project!
+  createProjectGroup(input: CreateProjectGroupInput!): ProjectGroup!
+  createRequirement(input: CreateRequirementInput!): Requirement!
+  createSubject(input: CreateSubjectInput!): Subject!
   createUser(input: CreateUserInput!): User!
+  deleteProject(id: String!): Boolean!
+  deleteProjectGroup(id: String!): Boolean!
+  deleteRequirement(id: String!): Boolean!
+  deleteSubject(id: String!): Boolean!
   deleteUser(id: String!): Boolean!
   login(email: String!, password: String!): AuthPayload!
   logout: Boolean!
   refreshToken(refreshToken: String!): AuthPayload!
+  updateProject(id: String!, input: UpdateProjectInput!): Project!
+  updateProjectGroup(description: String, id: String!, name: String!): ProjectGroup!
+  updateRequirement(id: String!, input: UpdateRequirementInput!): Requirement!
+  updateRequirementStatus(id: String!, input: UpdateRequirementStatusInput!): Requirement!
+  updateSubject(description: String, id: String!, name: String!): Subject!
   updateUser(id: String!, input: UpdateUserInput!): User!
+}
+
+type Project {
+  code: String!
+  createdAt: DateTime!
+  createdBy: String!
+  description: String
+  groups: [ProjectGroup!]
+  id: ID!
+  isActive: Boolean!
+  name: String!
+  projectTypeId: String!
+  subjects: [Subject!]
+  updatedAt: DateTime!
+}
+
+type ProjectGroup {
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  name: String!
+  orderIndex: Float!
+  projectId: String!
+  subjects: [Subject!]
+  updatedAt: DateTime!
 }
 
 type Query {
   me: User!
+  project(id: String!): Project!
+  projects: [Project!]!
+  requirement(id: String!): Requirement!
+  requirements(projectId: String!): [Requirement!]!
   user(id: String!): User!
   users: [User!]!
+}
+
+type Requirement {
+  createdAt: DateTime!
+  createdBy: ID!
+  currentVersion: RequirementVersion
+  currentVersionId: ID
+  id: ID!
+  parentRequirement: Requirement
+  parentRequirementId: ID
+  priority: Int
+  projectId: ID!
+  status: RequirementStatus!
+  subRequirements: [Requirement!]
+  subjectId: ID
+  uid: String!
+  updatedAt: DateTime!
+  versions: [RequirementVersion!]
+}
+
+"""The status of a requirement"""
+enum RequirementStatus {
+  APPROVED
+  ARCHIVED
+  DEPRECATED
+  DRAFT
+  REVIEW
+}
+
+type RequirementVersion {
+  createdAt: DateTime!
+  createdBy: ID!
+  deltaNotes: String
+  effectiveFrom: DateTime!
+  effectiveTo: DateTime
+  id: ID!
+  rationale: String
+  requirementId: ID!
+  statement: String!
+  tags: [String!]!
+  title: String!
+  versionNumber: Int!
+}
+
+type Subject {
+  createdAt: DateTime!
+  description: String
+  groupId: String
+  id: ID!
+  name: String!
+  orderIndex: Float!
+  projectId: String!
+  updatedAt: DateTime!
+}
+
+input UpdateProjectInput {
+  description: String
+  isActive: Boolean
+  name: String
+}
+
+input UpdateRequirementInput {
+  deltaNotes: String
+  priority: Int
+  rationale: String
+  statement: String!
+  tags: [String!]
+  title: String!
+}
+
+input UpdateRequirementStatusInput {
+  status: String!
 }
 
 input UpdateUserInput {
