@@ -50,6 +50,7 @@ interface ErrorWithGraphQL extends Error {
 function ProjectsContent() {
   const router = useRouter();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -134,6 +135,16 @@ function ProjectsContent() {
 
   const projects: Project[] = data?.projects || [];
 
+  const filteredProjects = projects.filter((project) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      project.name.toLowerCase().includes(query) ||
+      project.code.toLowerCase().includes(query) ||
+      project.description?.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -146,6 +157,20 @@ function ProjectsContent() {
             </p>
           </div>
           <Button onClick={() => setIsCreateDialogOpen(true)}>Create Project</Button>
+        </div>
+
+        <div className="mb-4 flex items-center justify-between">
+          <Input
+            placeholder="Search by project name, code, or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-md"
+          />
+          {searchQuery && (
+            <p className="text-sm text-muted-foreground">
+              Found {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
+            </p>
+          )}
         </div>
 
         <div className="rounded-lg border bg-white">
@@ -161,7 +186,7 @@ function ProjectsContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
+              {filteredProjects.map((project) => (
                 <TableRow key={project.id}>
                   <TableCell className="font-medium">{project.code}</TableCell>
                   <TableCell>{project.name}</TableCell>
@@ -189,10 +214,12 @@ function ProjectsContent() {
                   </TableCell>
                 </TableRow>
               ))}
-              {projects.length === 0 && (
+              {filteredProjects.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    No projects yet. Create your first project to get started.
+                    {searchQuery
+                      ? `No projects found matching "${searchQuery}"`
+                      : 'No projects yet. Create your first project to get started.'}
                   </TableCell>
                 </TableRow>
               )}

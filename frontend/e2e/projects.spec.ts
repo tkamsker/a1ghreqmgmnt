@@ -60,9 +60,12 @@ test.describe('Project Management', () => {
 
     // Verify project appears in table
     await expect(adminPage.getByRole('cell', { name: projectCode, exact: true })).toBeVisible();
-    await expect(adminPage.getByText(projectName)).toBeVisible();
-    await expect(adminPage.getByText(projectDescription)).toBeVisible();
-    await expect(adminPage.getByText('Active')).toBeVisible();
+    await expect(adminPage.getByRole('cell', { name: projectName })).toBeVisible();
+
+    // Check for the description in the specific row
+    const projectRow = adminPage.getByRole('row').filter({ hasText: projectCode });
+    await expect(projectRow.getByText(projectDescription)).toBeVisible();
+    await expect(projectRow.getByText('Active')).toBeVisible();
   });
 
   test('should validate required fields when creating project', async ({ adminPage }) => {

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth, UserType } from '@/lib/auth-context';
 
 export function Header() {
   const router = useRouter();
@@ -43,6 +43,24 @@ export function Header() {
             >
               Projects
             </Link>
+            {user?.userType === UserType.SUPER_ADMIN && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto px-0 py-0 font-medium text-sm text-foreground/60 hover:text-foreground/80"
+                  >
+                    System Admin
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={() => router.push('/users')}>
+                    User Management
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
