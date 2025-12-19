@@ -38,7 +38,7 @@ function DashboardContent() {
   }
 
   const projects: Project[] = data?.projects || [];
-  const recentProjects = projects
+  const recentProjects = [...projects]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 5);
 
