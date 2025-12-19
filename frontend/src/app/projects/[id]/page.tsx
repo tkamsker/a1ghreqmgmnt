@@ -24,7 +24,11 @@ import {
   DELETE_PROJECT_GROUP,
   DELETE_SUBJECT,
 } from '@/lib/graphql/mutations/projects';
-import { CREATE_REQUIREMENT, DELETE_REQUIREMENT } from '@/lib/graphql/mutations/requirements';
+import {
+  CREATE_REQUIREMENT,
+  UPDATE_REQUIREMENT,
+  DELETE_REQUIREMENT,
+} from '@/lib/graphql/mutations/requirements';
 import { GET_PROJECT } from '@/lib/graphql/queries/projects';
 import { GET_REQUIREMENTS } from '@/lib/graphql/queries/requirements';
 
@@ -104,6 +108,8 @@ function ProjectDetailContent() {
     parentRequirementId: null as string | null,
   });
   const [isRequirementDialogOpen, setIsRequirementDialogOpen] = useState(false);
+  const [isEditRequirementDialogOpen, setIsEditRequirementDialogOpen] = useState(false);
+  const [editingRequirement, setEditingRequirement] = useState<Requirement | null>(null);
 
   const { data, loading, error, refetch } = useQuery(GET_PROJECT, {
     variables: { id: projectId },
@@ -122,6 +128,7 @@ function ProjectDetailContent() {
   const [createSubject] = useMutation(CREATE_SUBJECT);
   const [deleteSubject] = useMutation(DELETE_SUBJECT);
   const [createRequirement] = useMutation(CREATE_REQUIREMENT);
+  const [updateRequirement] = useMutation(UPDATE_REQUIREMENT);
   const [deleteRequirement] = useMutation(DELETE_REQUIREMENT);
 
   const handleCreateGroup = async () => {
@@ -223,6 +230,40 @@ function ProjectDetailContent() {
     }
   };
 
+  const handleEditRequirement = async () => {
+    if (!editingRequirement) return;
+
+    try {
+      await updateRequirement({
+        variables: {
+          id: editingRequirement.id,
+          input: {
+            title: requirementForm.title,
+            statement: requirementForm.statement,
+            rationale: requirementForm.rationale || null,
+            tags: requirementForm.tags,
+            priority: requirementForm.priority,
+            deltaNotes: requirementForm.rationale, // Using rationale field for delta notes in edit
+          },
+        },
+      });
+      setIsEditRequirementDialogOpen(false);
+      setEditingRequirement(null);
+      setRequirementForm({
+        title: '',
+        statement: '',
+        rationale: '',
+        tags: [],
+        priority: 1,
+        subjectId: null,
+        parentRequirementId: null,
+      });
+      refetchRequirements();
+    } catch (err: any) {
+      alert(err?.graphQLErrors?.[0]?.message || 'Failed to update requirement');
+    }
+  };
+
   const handleDeleteRequirement = async (requirementId: string, requirementUid: string) => {
     if (!confirm(`Delete requirement "${requirementUid}"?`)) return;
 
@@ -232,6 +273,20 @@ function ProjectDetailContent() {
     } catch (err: any) {
       alert(err?.graphQLErrors?.[0]?.message || 'Failed to delete requirement');
     }
+  };
+
+  const openEditRequirementDialog = (requirement: Requirement) => {
+    setEditingRequirement(requirement);
+    setRequirementForm({
+      title: requirement.currentVersion?.title || '',
+      statement: requirement.currentVersion?.statement || '',
+      rationale: '', // Delta notes - starts empty for edit
+      tags: requirement.currentVersion?.tags || [],
+      priority: requirement.priority || 1,
+      subjectId: requirement.subjectId,
+      parentRequirementId: requirement.parentRequirementId,
+    });
+    setIsEditRequirementDialogOpen(true);
   };
 
   const openRequirementDialog = (
@@ -361,13 +416,22 @@ function ProjectDetailContent() {
                                   {req.status}
                                 </span>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteRequirement(req.id, req.uid)}
-                              >
-                                Delete
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openEditRequirementDialog(req)}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteRequirement(req.id, req.uid)}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -467,13 +531,22 @@ function ProjectDetailContent() {
                                     {req.status}
                                   </span>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteRequirement(req.id, req.uid)}
-                                >
-                                  Delete
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditRequirementDialog(req)}
+                                  >
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteRequirement(req.id, req.uid)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -678,6 +751,111 @@ function ProjectDetailContent() {
                 disabled={!requirementForm.title || !requirementForm.statement}
               >
                 Create Requirement
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Requirement Dialog */}
+        <Dialog open={isEditRequirementDialogOpen} onOpenChange={setIsEditRequirementDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Requirement {editingRequirement?.uid}</DialogTitle>
+              <DialogDescription>
+                Editing will create a new version (v
+                {(editingRequirement?.currentVersion?.versionNumber || 0) + 1}). Changes are tracked
+                in version history.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-900">
+                <p className="font-medium">
+                  Current Version: v{editingRequirement?.currentVersion?.versionNumber}
+                </p>
+                <p className="text-xs mt-1">
+                  This edit will create version{' '}
+                  {(editingRequirement?.currentVersion?.versionNumber || 0) + 1}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-req-title">Title *</Label>
+                <Input
+                  id="edit-req-title"
+                  value={requirementForm.title}
+                  onChange={(e) =>
+                    setRequirementForm({ ...requirementForm, title: e.target.value })
+                  }
+                  placeholder="Enter requirement title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-req-statement">Statement *</Label>
+                <textarea
+                  id="edit-req-statement"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  rows={4}
+                  value={requirementForm.statement}
+                  onChange={(e) =>
+                    setRequirementForm({ ...requirementForm, statement: e.target.value })
+                  }
+                  placeholder="Describe what this requirement specifies"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-req-delta">Delta Notes (What Changed?)</Label>
+                <textarea
+                  id="edit-req-delta"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  rows={3}
+                  value={requirementForm.rationale}
+                  onChange={(e) =>
+                    setRequirementForm({ ...requirementForm, rationale: e.target.value })
+                  }
+                  placeholder="Describe what changed in this version (optional but recommended)"
+                />
+                <p className="text-xs text-muted-foreground">
+                  These notes will help track why the requirement was modified
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-req-priority">Priority</Label>
+                <Input
+                  id="edit-req-priority"
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={requirementForm.priority}
+                  onChange={(e) =>
+                    setRequirementForm({ ...requirementForm, priority: parseInt(e.target.value) })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">1 (highest) to 5 (lowest)</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditRequirementDialogOpen(false);
+                  setEditingRequirement(null);
+                  setRequirementForm({
+                    title: '',
+                    statement: '',
+                    rationale: '',
+                    tags: [],
+                    priority: 1,
+                    subjectId: null,
+                    parentRequirementId: null,
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleEditRequirement}
+                disabled={!requirementForm.title || !requirementForm.statement}
+              >
+                Save New Version
               </Button>
             </DialogFooter>
           </DialogContent>
