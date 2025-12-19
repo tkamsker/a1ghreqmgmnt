@@ -391,54 +391,122 @@ function ProjectDetailContent() {
                       {subjectRequirements.length > 0 ? (
                         <div className="mt-2 space-y-1 pl-4">
                           {subjectRequirements.map((req) => (
-                            <div
-                              key={req.id}
-                              className="flex items-center justify-between rounded border bg-white p-2 text-sm"
-                            >
-                              <div className="flex-1">
-                                <span className="font-mono text-xs text-muted-foreground">
-                                  {req.uid}
-                                </span>
-                                <span className="ml-2">
-                                  {req.currentVersion?.title || 'Untitled'}
-                                </span>
-                                <span
-                                  className={`ml-2 rounded px-2 py-0.5 text-xs ${
-                                    req.status === 'DRAFT'
-                                      ? 'bg-gray-100 text-gray-700'
-                                      : req.status === 'REVIEW'
-                                        ? 'bg-yellow-100 text-yellow-700'
-                                        : req.status === 'APPROVED'
-                                          ? 'bg-green-100 text-green-700'
-                                          : 'bg-red-100 text-red-700'
-                                  }`}
-                                >
-                                  {req.status}
-                                </span>
+                            <div key={req.id}>
+                              <div className="flex items-center justify-between rounded border bg-white p-2 text-sm">
+                                <div className="flex-1">
+                                  <span className="font-mono text-xs text-muted-foreground">
+                                    {req.uid}
+                                  </span>
+                                  <span className="ml-2">
+                                    {req.currentVersion?.title || 'Untitled'}
+                                  </span>
+                                  <span
+                                    className={`ml-2 rounded px-2 py-0.5 text-xs ${
+                                      req.status === 'DRAFT'
+                                        ? 'bg-gray-100 text-gray-700'
+                                        : req.status === 'REVIEW'
+                                          ? 'bg-yellow-100 text-yellow-700'
+                                          : req.status === 'APPROVED'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-red-100 text-red-700'
+                                    }`}
+                                  >
+                                    {req.status}
+                                  </span>
+                                  {req.subRequirements && req.subRequirements.length > 0 && (
+                                    <span className="ml-2 text-xs text-muted-foreground">
+                                      ({req.subRequirements.length} sub)
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => router.push(`/requirements/${req.id}`)}
+                                  >
+                                    View
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openRequirementDialog(subject.id, req.id)}
+                                  >
+                                    + Sub
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditRequirementDialog(req)}
+                                  >
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteRequirement(req.id, req.uid)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
                               </div>
-                              <div className="flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => router.push(`/requirements/${req.id}`)}
-                                >
-                                  View
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditRequirementDialog(req)}
-                                >
-                                  Edit
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteRequirement(req.id, req.uid)}
-                                >
-                                  Delete
-                                </Button>
-                              </div>
+                              {req.subRequirements && req.subRequirements.length > 0 && (
+                                <div className="ml-6 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
+                                  {req.subRequirements.map((subReq) => (
+                                    <div
+                                      key={subReq.id}
+                                      className="flex items-center justify-between rounded border bg-gray-50 p-2 text-sm"
+                                    >
+                                      <div className="flex-1">
+                                        <span className="font-mono text-xs text-muted-foreground">
+                                          {subReq.uid}
+                                        </span>
+                                        <span className="ml-2">
+                                          {subReq.currentVersion?.title || 'Untitled'}
+                                        </span>
+                                        <span
+                                          className={`ml-2 rounded px-2 py-0.5 text-xs ${
+                                            subReq.status === 'DRAFT'
+                                              ? 'bg-gray-100 text-gray-700'
+                                              : subReq.status === 'REVIEW'
+                                                ? 'bg-yellow-100 text-yellow-700'
+                                                : subReq.status === 'APPROVED'
+                                                  ? 'bg-green-100 text-green-700'
+                                                  : 'bg-red-100 text-red-700'
+                                          }`}
+                                        >
+                                          {subReq.status}
+                                        </span>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => router.push(`/requirements/${subReq.id}`)}
+                                        >
+                                          View
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => openEditRequirementDialog(subReq)}
+                                        >
+                                          Edit
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
+                                            handleDeleteRequirement(subReq.id, subReq.uid)
+                                          }
+                                        >
+                                          Delete
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -513,54 +581,124 @@ function ProjectDetailContent() {
                         {subjectRequirements.length > 0 ? (
                           <div className="mt-2 space-y-1 pl-4">
                             {subjectRequirements.map((req) => (
-                              <div
-                                key={req.id}
-                                className="flex items-center justify-between rounded border bg-white p-2 text-sm"
-                              >
-                                <div className="flex-1">
-                                  <span className="font-mono text-xs text-muted-foreground">
-                                    {req.uid}
-                                  </span>
-                                  <span className="ml-2">
-                                    {req.currentVersion?.title || 'Untitled'}
-                                  </span>
-                                  <span
-                                    className={`ml-2 rounded px-2 py-0.5 text-xs ${
-                                      req.status === 'DRAFT'
-                                        ? 'bg-gray-100 text-gray-700'
-                                        : req.status === 'REVIEW'
-                                          ? 'bg-yellow-100 text-yellow-700'
-                                          : req.status === 'APPROVED'
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-red-100 text-red-700'
-                                    }`}
-                                  >
-                                    {req.status}
-                                  </span>
+                              <div key={req.id}>
+                                <div className="flex items-center justify-between rounded border bg-white p-2 text-sm">
+                                  <div className="flex-1">
+                                    <span className="font-mono text-xs text-muted-foreground">
+                                      {req.uid}
+                                    </span>
+                                    <span className="ml-2">
+                                      {req.currentVersion?.title || 'Untitled'}
+                                    </span>
+                                    <span
+                                      className={`ml-2 rounded px-2 py-0.5 text-xs ${
+                                        req.status === 'DRAFT'
+                                          ? 'bg-gray-100 text-gray-700'
+                                          : req.status === 'REVIEW'
+                                            ? 'bg-yellow-100 text-yellow-700'
+                                            : req.status === 'APPROVED'
+                                              ? 'bg-green-100 text-green-700'
+                                              : 'bg-red-100 text-red-700'
+                                      }`}
+                                    >
+                                      {req.status}
+                                    </span>
+                                    {req.subRequirements && req.subRequirements.length > 0 && (
+                                      <span className="ml-2 text-xs text-muted-foreground">
+                                        ({req.subRequirements.length} sub)
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => router.push(`/requirements/${req.id}`)}
+                                    >
+                                      View
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openRequirementDialog(subject.id, req.id)}
+                                    >
+                                      + Sub
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openEditRequirementDialog(req)}
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteRequirement(req.id, req.uid)}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </div>
                                 </div>
-                                <div className="flex gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => router.push(`/requirements/${req.id}`)}
-                                  >
-                                    View
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openEditRequirementDialog(req)}
-                                  >
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteRequirement(req.id, req.uid)}
-                                  >
-                                    Delete
-                                  </Button>
-                                </div>
+                                {req.subRequirements && req.subRequirements.length > 0 && (
+                                  <div className="ml-6 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
+                                    {req.subRequirements.map((subReq) => (
+                                      <div
+                                        key={subReq.id}
+                                        className="flex items-center justify-between rounded border bg-gray-50 p-2 text-sm"
+                                      >
+                                        <div className="flex-1">
+                                          <span className="font-mono text-xs text-muted-foreground">
+                                            {subReq.uid}
+                                          </span>
+                                          <span className="ml-2">
+                                            {subReq.currentVersion?.title || 'Untitled'}
+                                          </span>
+                                          <span
+                                            className={`ml-2 rounded px-2 py-0.5 text-xs ${
+                                              subReq.status === 'DRAFT'
+                                                ? 'bg-gray-100 text-gray-700'
+                                                : subReq.status === 'REVIEW'
+                                                  ? 'bg-yellow-100 text-yellow-700'
+                                                  : subReq.status === 'APPROVED'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-red-100 text-red-700'
+                                            }`}
+                                          >
+                                            {subReq.status}
+                                          </span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                              router.push(`/requirements/${subReq.id}`)
+                                            }
+                                          >
+                                            View
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => openEditRequirementDialog(subReq)}
+                                          >
+                                            Edit
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                              handleDeleteRequirement(subReq.id, subReq.uid)
+                                            }
+                                          >
+                                            Delete
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -684,12 +822,26 @@ function ProjectDetailContent() {
         <Dialog open={isRequirementDialogOpen} onOpenChange={setIsRequirementDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Create Requirement</DialogTitle>
+              <DialogTitle>
+                {requirementForm.parentRequirementId
+                  ? 'Create Sub-Requirement'
+                  : 'Create Requirement'}
+              </DialogTitle>
               <DialogDescription>
-                Add a new requirement to track functional or non-functional needs.
+                {requirementForm.parentRequirementId
+                  ? 'Add a sub-requirement that is linked to the parent requirement.'
+                  : 'Add a new requirement to track functional or non-functional needs.'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              {requirementForm.parentRequirementId && (
+                <div className="rounded-md bg-blue-50 p-3 text-sm text-blue-900">
+                  <p className="font-medium">Creating Sub-Requirement</p>
+                  <p className="text-xs mt-1">
+                    This requirement will be linked to the selected parent requirement.
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="req-title">Title *</Label>
                 <Input
