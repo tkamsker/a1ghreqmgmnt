@@ -420,6 +420,13 @@ function ProjectDetailContent() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  onClick={() => router.push(`/requirements/${req.id}`)}
+                                >
+                                  View
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => openEditRequirementDialog(req)}
                                 >
                                   Edit
@@ -532,6 +539,13 @@ function ProjectDetailContent() {
                                   </span>
                                 </div>
                                 <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => router.push(`/requirements/${req.id}`)}
+                                  >
+                                    View
+                                  </Button>
                                   <Button
                                     variant="ghost"
                                     size="sm"
