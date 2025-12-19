@@ -1,13 +1,21 @@
 'use client';
 
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import { useParams, useRouter } from 'next/navigation';
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { UserType } from '@/lib/auth-context';
+import { UPDATE_REQUIREMENT_STATUS } from '@/lib/graphql/mutations/requirements';
 import { GET_REQUIREMENT } from '@/lib/graphql/queries/requirements';
 
 interface RequirementVersion {
@@ -65,9 +73,25 @@ function RequirementDetailContent() {
   const router = useRouter();
   const requirementId = params.id as string;
 
-  const { data, loading, error } = useQuery(GET_REQUIREMENT, {
+  const { data, loading, error, refetch } = useQuery(GET_REQUIREMENT, {
     variables: { id: requirementId },
   });
+
+  const [updateRequirementStatus] = useMutation(UPDATE_REQUIREMENT_STATUS);
+
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      await updateRequirementStatus({
+        variables: {
+          id: requirementId,
+          input: { status: newStatus },
+        },
+      });
+      refetch();
+    } catch (err: any) {
+      alert(err?.graphQLErrors?.[0]?.message || 'Failed to update status');
+    }
+  };
 
   if (loading) {
     return (
@@ -104,23 +128,6 @@ function RequirementDetailContent() {
 
   const currentVersion = requirement.currentVersion;
   const versionHistory = requirement.versions || [];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'DRAFT':
-        return 'text-gray-600';
-      case 'REVIEW':
-        return 'text-yellow-600';
-      case 'APPROVED':
-        return 'text-green-600';
-      case 'REJECTED':
-        return 'text-red-600';
-      case 'OBSOLETE':
-        return 'text-gray-400';
-      default:
-        return 'text-gray-600';
-    }
-  };
 
   const getPriorityLabel = (priority: number) => {
     switch (priority) {
@@ -170,9 +177,18 @@ function RequirementDetailContent() {
                 </CardDescription>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <span className={`text-sm font-medium ${getStatusColor(requirement.status)}`}>
-                  {requirement.status}
-                </span>
+                <Select value={requirement.status} onValueChange={handleStatusChange}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DRAFT">Draft</SelectItem>
+                    <SelectItem value="REVIEW">Review</SelectItem>
+                    <SelectItem value="APPROVED">Approved</SelectItem>
+                    <SelectItem value="DEPRECATED">Deprecated</SelectItem>
+                    <SelectItem value="ARCHIVED">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
                 <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
                   {getPriorityLabel(requirement.priority)}
                 </span>

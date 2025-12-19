@@ -17,6 +17,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { UserType } from '@/lib/auth-context';
 import {
   CREATE_PROJECT_GROUP,
@@ -27,6 +34,7 @@ import {
 import {
   CREATE_REQUIREMENT,
   UPDATE_REQUIREMENT,
+  UPDATE_REQUIREMENT_STATUS,
   DELETE_REQUIREMENT,
 } from '@/lib/graphql/mutations/requirements';
 import { GET_PROJECT } from '@/lib/graphql/queries/projects';
@@ -129,6 +137,7 @@ function ProjectDetailContent() {
   const [deleteSubject] = useMutation(DELETE_SUBJECT);
   const [createRequirement] = useMutation(CREATE_REQUIREMENT);
   const [updateRequirement] = useMutation(UPDATE_REQUIREMENT);
+  const [updateRequirementStatus] = useMutation(UPDATE_REQUIREMENT_STATUS);
   const [deleteRequirement] = useMutation(DELETE_REQUIREMENT);
 
   const handleCreateGroup = async () => {
@@ -275,6 +284,20 @@ function ProjectDetailContent() {
     }
   };
 
+  const handleStatusChange = async (requirementId: string, newStatus: string) => {
+    try {
+      await updateRequirementStatus({
+        variables: {
+          id: requirementId,
+          input: { status: newStatus },
+        },
+      });
+      refetchRequirements();
+    } catch (err: any) {
+      alert(err?.graphQLErrors?.[0]?.message || 'Failed to update status');
+    }
+  };
+
   const openEditRequirementDialog = (requirement: Requirement) => {
     setEditingRequirement(requirement);
     setRequirementForm({
@@ -393,28 +416,28 @@ function ProjectDetailContent() {
                           {subjectRequirements.map((req) => (
                             <div key={req.id}>
                               <div className="flex items-center justify-between rounded border bg-white p-2 text-sm">
-                                <div className="flex-1">
+                                <div className="flex flex-1 items-center gap-2">
                                   <span className="font-mono text-xs text-muted-foreground">
                                     {req.uid}
                                   </span>
-                                  <span className="ml-2">
-                                    {req.currentVersion?.title || 'Untitled'}
-                                  </span>
-                                  <span
-                                    className={`ml-2 rounded px-2 py-0.5 text-xs ${
-                                      req.status === 'DRAFT'
-                                        ? 'bg-gray-100 text-gray-700'
-                                        : req.status === 'REVIEW'
-                                          ? 'bg-yellow-100 text-yellow-700'
-                                          : req.status === 'APPROVED'
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-red-100 text-red-700'
-                                    }`}
+                                  <span>{req.currentVersion?.title || 'Untitled'}</span>
+                                  <Select
+                                    value={req.status}
+                                    onValueChange={(value) => handleStatusChange(req.id, value)}
                                   >
-                                    {req.status}
-                                  </span>
+                                    <SelectTrigger className="h-7 w-[120px] text-xs">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="DRAFT">Draft</SelectItem>
+                                      <SelectItem value="REVIEW">Review</SelectItem>
+                                      <SelectItem value="APPROVED">Approved</SelectItem>
+                                      <SelectItem value="DEPRECATED">Deprecated</SelectItem>
+                                      <SelectItem value="ARCHIVED">Archived</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                   {req.subRequirements && req.subRequirements.length > 0 && (
-                                    <span className="ml-2 text-xs text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground">
                                       ({req.subRequirements.length} sub)
                                     </span>
                                   )}
@@ -457,26 +480,28 @@ function ProjectDetailContent() {
                                       key={subReq.id}
                                       className="flex items-center justify-between rounded border bg-gray-50 p-2 text-sm"
                                     >
-                                      <div className="flex-1">
+                                      <div className="flex flex-1 items-center gap-2">
                                         <span className="font-mono text-xs text-muted-foreground">
                                           {subReq.uid}
                                         </span>
-                                        <span className="ml-2">
-                                          {subReq.currentVersion?.title || 'Untitled'}
-                                        </span>
-                                        <span
-                                          className={`ml-2 rounded px-2 py-0.5 text-xs ${
-                                            subReq.status === 'DRAFT'
-                                              ? 'bg-gray-100 text-gray-700'
-                                              : subReq.status === 'REVIEW'
-                                                ? 'bg-yellow-100 text-yellow-700'
-                                                : subReq.status === 'APPROVED'
-                                                  ? 'bg-green-100 text-green-700'
-                                                  : 'bg-red-100 text-red-700'
-                                          }`}
+                                        <span>{subReq.currentVersion?.title || 'Untitled'}</span>
+                                        <Select
+                                          value={subReq.status}
+                                          onValueChange={(value) =>
+                                            handleStatusChange(subReq.id, value)
+                                          }
                                         >
-                                          {subReq.status}
-                                        </span>
+                                          <SelectTrigger className="h-7 w-[120px] text-xs">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="DRAFT">Draft</SelectItem>
+                                            <SelectItem value="REVIEW">Review</SelectItem>
+                                            <SelectItem value="APPROVED">Approved</SelectItem>
+                                            <SelectItem value="DEPRECATED">Deprecated</SelectItem>
+                                            <SelectItem value="ARCHIVED">Archived</SelectItem>
+                                          </SelectContent>
+                                        </Select>
                                       </div>
                                       <div className="flex gap-1">
                                         <Button
@@ -583,28 +608,28 @@ function ProjectDetailContent() {
                             {subjectRequirements.map((req) => (
                               <div key={req.id}>
                                 <div className="flex items-center justify-between rounded border bg-white p-2 text-sm">
-                                  <div className="flex-1">
+                                  <div className="flex flex-1 items-center gap-2">
                                     <span className="font-mono text-xs text-muted-foreground">
                                       {req.uid}
                                     </span>
-                                    <span className="ml-2">
-                                      {req.currentVersion?.title || 'Untitled'}
-                                    </span>
-                                    <span
-                                      className={`ml-2 rounded px-2 py-0.5 text-xs ${
-                                        req.status === 'DRAFT'
-                                          ? 'bg-gray-100 text-gray-700'
-                                          : req.status === 'REVIEW'
-                                            ? 'bg-yellow-100 text-yellow-700'
-                                            : req.status === 'APPROVED'
-                                              ? 'bg-green-100 text-green-700'
-                                              : 'bg-red-100 text-red-700'
-                                      }`}
+                                    <span>{req.currentVersion?.title || 'Untitled'}</span>
+                                    <Select
+                                      value={req.status}
+                                      onValueChange={(value) => handleStatusChange(req.id, value)}
                                     >
-                                      {req.status}
-                                    </span>
+                                      <SelectTrigger className="h-7 w-[120px] text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="DRAFT">Draft</SelectItem>
+                                        <SelectItem value="REVIEW">Review</SelectItem>
+                                        <SelectItem value="APPROVED">Approved</SelectItem>
+                                        <SelectItem value="DEPRECATED">Deprecated</SelectItem>
+                                        <SelectItem value="ARCHIVED">Archived</SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                     {req.subRequirements && req.subRequirements.length > 0 && (
-                                      <span className="ml-2 text-xs text-muted-foreground">
+                                      <span className="text-xs text-muted-foreground">
                                         ({req.subRequirements.length} sub)
                                       </span>
                                     )}
@@ -647,26 +672,28 @@ function ProjectDetailContent() {
                                         key={subReq.id}
                                         className="flex items-center justify-between rounded border bg-gray-50 p-2 text-sm"
                                       >
-                                        <div className="flex-1">
+                                        <div className="flex flex-1 items-center gap-2">
                                           <span className="font-mono text-xs text-muted-foreground">
                                             {subReq.uid}
                                           </span>
-                                          <span className="ml-2">
-                                            {subReq.currentVersion?.title || 'Untitled'}
-                                          </span>
-                                          <span
-                                            className={`ml-2 rounded px-2 py-0.5 text-xs ${
-                                              subReq.status === 'DRAFT'
-                                                ? 'bg-gray-100 text-gray-700'
-                                                : subReq.status === 'REVIEW'
-                                                  ? 'bg-yellow-100 text-yellow-700'
-                                                  : subReq.status === 'APPROVED'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-red-100 text-red-700'
-                                            }`}
+                                          <span>{subReq.currentVersion?.title || 'Untitled'}</span>
+                                          <Select
+                                            value={subReq.status}
+                                            onValueChange={(value) =>
+                                              handleStatusChange(subReq.id, value)
+                                            }
                                           >
-                                            {subReq.status}
-                                          </span>
+                                            <SelectTrigger className="h-7 w-[120px] text-xs">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="DRAFT">Draft</SelectItem>
+                                              <SelectItem value="REVIEW">Review</SelectItem>
+                                              <SelectItem value="APPROVED">Approved</SelectItem>
+                                              <SelectItem value="DEPRECATED">Deprecated</SelectItem>
+                                              <SelectItem value="ARCHIVED">Archived</SelectItem>
+                                            </SelectContent>
+                                          </Select>
                                         </div>
                                         <div className="flex gap-1">
                                           <Button
