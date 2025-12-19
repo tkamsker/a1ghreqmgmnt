@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useMutation } from '@apollo/client';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Header } from '@/components/layout/Header';
@@ -78,7 +78,7 @@ function ProjectsContent() {
             name: formData.name,
             code: formData.code,
             description: formData.description || null,
-            projectTypeId: formData.projectTypeId || '1', // TODO: Make this selectable
+            projectTypeId: formData.projectTypeId || '07830a70-e4ab-4dc2-ab5a-3abbbaafe07c', // Default to Software Development
           },
         },
       });
@@ -91,7 +91,7 @@ function ProjectsContent() {
     }
   };
 
-  const handleDelete = async (projectId: string, projectName: string) {
+  const handleDelete = async (projectId: string, projectName: string) => {
     if (!confirm(`Are you sure you want to delete project "${projectName}"?`)) {
       return;
     }
@@ -175,11 +175,7 @@ function ProjectsContent() {
                   </TableCell>
                   <TableCell>{new Date(project.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewProject(project.id)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => handleViewProject(project.id)}>
                       View
                     </Button>
                     <Button
@@ -252,7 +248,10 @@ function ProjectsContent() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleCreate} disabled={creating || !formData.name || !formData.code}>
+              <Button
+                onClick={handleCreate}
+                disabled={creating || !formData.name || !formData.code}
+              >
                 {creating ? 'Creating...' : 'Create Project'}
               </Button>
             </DialogFooter>
@@ -265,7 +264,14 @@ function ProjectsContent() {
 
 export default function ProjectsPage() {
   return (
-    <ProtectedRoute allowedRoles={[UserType.SUPER_ADMIN, UserType.PROJECT_ADMIN, UserType.CONTRIBUTOR, UserType.REVIEWER]}>
+    <ProtectedRoute
+      allowedRoles={[
+        UserType.SUPER_ADMIN,
+        UserType.PROJECT_ADMIN,
+        UserType.CONTRIBUTOR,
+        UserType.REVIEWER,
+      ]}
+    >
       <ProjectsContent />
     </ProtectedRoute>
   );

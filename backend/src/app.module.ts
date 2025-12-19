@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppConfigModule } from './config/config.module';
 import { PrismaModule } from './database/prisma.module';
 import { ProjectsModule } from './projects/projects.module';
+import { RequirementsModule } from './requirements/requirements.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -44,6 +45,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
     ProjectsModule,
+    RequirementsModule,
   ],
   controllers: [],
   providers: [],

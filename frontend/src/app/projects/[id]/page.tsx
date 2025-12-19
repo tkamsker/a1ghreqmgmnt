@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useMutation } from '@apollo/client';
-import { useState } from 'react';
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Header } from '@/components/layout/Header';
@@ -24,7 +24,41 @@ import {
   DELETE_PROJECT_GROUP,
   DELETE_SUBJECT,
 } from '@/lib/graphql/mutations/projects';
+import { CREATE_REQUIREMENT, DELETE_REQUIREMENT } from '@/lib/graphql/mutations/requirements';
 import { GET_PROJECT } from '@/lib/graphql/queries/projects';
+import { GET_REQUIREMENTS } from '@/lib/graphql/queries/requirements';
+
+interface RequirementVersion {
+  id: string;
+  versionNumber: number;
+  title: string;
+  statement: string;
+  rationale: string | null;
+  tags: string[];
+  deltaNotes: string | null;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  createdBy: string;
+  createdAt: string;
+}
+
+interface Requirement {
+  id: string;
+  uid: string;
+  projectId: string;
+  subjectId: string | null;
+  parentRequirementId: string | null;
+  currentVersionId: string | null;
+  status: 'DRAFT' | 'REVIEW' | 'APPROVED' | 'DEPRECATED' | 'ARCHIVED';
+  priority: number | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  currentVersion: RequirementVersion | null;
+  versions?: RequirementVersion[];
+  subRequirements?: Requirement[];
+  parentRequirement?: Requirement | null;
+}
 
 interface Subject {
   id: string;
@@ -60,15 +94,35 @@ function ProjectDetailContent() {
 
   const [groupForm, setGroupForm] = useState({ name: '', description: '' });
   const [subjectForm, setSubjectForm] = useState({ name: '', description: '' });
+  const [requirementForm, setRequirementForm] = useState({
+    title: '',
+    statement: '',
+    rationale: '',
+    tags: [] as string[],
+    priority: 1,
+    subjectId: null as string | null,
+    parentRequirementId: null as string | null,
+  });
+  const [isRequirementDialogOpen, setIsRequirementDialogOpen] = useState(false);
 
   const { data, loading, error, refetch } = useQuery(GET_PROJECT, {
     variables: { id: projectId },
+  });
+
+  const {
+    data: requirementsData,
+    loading: _requirementsLoading,
+    refetch: refetchRequirements,
+  } = useQuery(GET_REQUIREMENTS, {
+    variables: { projectId },
   });
 
   const [createGroup] = useMutation(CREATE_PROJECT_GROUP);
   const [deleteGroup] = useMutation(DELETE_PROJECT_GROUP);
   const [createSubject] = useMutation(CREATE_SUBJECT);
   const [deleteSubject] = useMutation(DELETE_SUBJECT);
+  const [createRequirement] = useMutation(CREATE_REQUIREMENT);
+  const [deleteRequirement] = useMutation(DELETE_REQUIREMENT);
 
   const handleCreateGroup = async () => {
     try {
@@ -121,7 +175,7 @@ function ProjectDetailContent() {
     }
   };
 
-  const handleDeleteSubject = async (subjectId: string, subjectName: string) {
+  const handleDeleteSubject = async (subjectId: string, subjectName: string) => {
     if (!confirm(`Delete subject "${subjectName}"?`)) return;
 
     try {
@@ -135,6 +189,67 @@ function ProjectDetailContent() {
   const openSubjectDialog = (groupId: string | null = null) => {
     setSelectedGroupId(groupId);
     setIsSubjectDialogOpen(true);
+  };
+
+  const handleCreateRequirement = async () => {
+    try {
+      await createRequirement({
+        variables: {
+          input: {
+            projectId,
+            subjectId: requirementForm.subjectId,
+            parentRequirementId: requirementForm.parentRequirementId,
+            title: requirementForm.title,
+            statement: requirementForm.statement,
+            rationale: requirementForm.rationale || null,
+            tags: requirementForm.tags,
+            priority: requirementForm.priority,
+          },
+        },
+      });
+      setIsRequirementDialogOpen(false);
+      setRequirementForm({
+        title: '',
+        statement: '',
+        rationale: '',
+        tags: [],
+        priority: 1,
+        subjectId: null,
+        parentRequirementId: null,
+      });
+      refetchRequirements();
+    } catch (err: any) {
+      alert(err?.graphQLErrors?.[0]?.message || 'Failed to create requirement');
+    }
+  };
+
+  const handleDeleteRequirement = async (requirementId: string, requirementUid: string) => {
+    if (!confirm(`Delete requirement "${requirementUid}"?`)) return;
+
+    try {
+      await deleteRequirement({ variables: { id: requirementId } });
+      refetchRequirements();
+    } catch (err: any) {
+      alert(err?.graphQLErrors?.[0]?.message || 'Failed to delete requirement');
+    }
+  };
+
+  const openRequirementDialog = (
+    subjectId: string | null = null,
+    parentRequirementId: string | null = null,
+  ) => {
+    setRequirementForm({
+      ...requirementForm,
+      subjectId,
+      parentRequirementId,
+    });
+    setIsRequirementDialogOpen(true);
+  };
+
+  const requirements: Requirement[] = requirementsData?.requirements || [];
+
+  const getRequirementsForSubject = (subjectId: string) => {
+    return requirements.filter((req) => req.subjectId === subjectId && !req.parentRequirementId);
   };
 
   if (loading) {
@@ -187,27 +302,83 @@ function ProjectDetailContent() {
           {project.subjects.length > 0 && (
             <div className="rounded-lg border bg-white p-4">
               <h3 className="mb-3 font-semibold">Top-Level Subjects</h3>
-              <div className="space-y-2">
-                {project.subjects.map((subject) => (
-                  <div
-                    key={subject.id}
-                    className="flex items-center justify-between rounded border p-2"
-                  >
-                    <div>
-                      <p className="font-medium">{subject.name}</p>
-                      {subject.description && (
-                        <p className="text-sm text-muted-foreground">{subject.description}</p>
+              <div className="space-y-4">
+                {project.subjects.map((subject) => {
+                  const subjectRequirements = getRequirementsForSubject(subject.id);
+                  return (
+                    <div key={subject.id} className="rounded border bg-gray-50 p-3">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{subject.name}</p>
+                          {subject.description && (
+                            <p className="text-sm text-muted-foreground">{subject.description}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openRequirementDialog(subject.id)}
+                          >
+                            Add Requirement
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteSubject(subject.id, subject.name)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Requirements for this subject */}
+                      {subjectRequirements.length > 0 ? (
+                        <div className="mt-2 space-y-1 pl-4">
+                          {subjectRequirements.map((req) => (
+                            <div
+                              key={req.id}
+                              className="flex items-center justify-between rounded border bg-white p-2 text-sm"
+                            >
+                              <div className="flex-1">
+                                <span className="font-mono text-xs text-muted-foreground">
+                                  {req.uid}
+                                </span>
+                                <span className="ml-2">
+                                  {req.currentVersion?.title || 'Untitled'}
+                                </span>
+                                <span
+                                  className={`ml-2 rounded px-2 py-0.5 text-xs ${
+                                    req.status === 'DRAFT'
+                                      ? 'bg-gray-100 text-gray-700'
+                                      : req.status === 'REVIEW'
+                                        ? 'bg-yellow-100 text-yellow-700'
+                                        : req.status === 'APPROVED'
+                                          ? 'bg-green-100 text-green-700'
+                                          : 'bg-red-100 text-red-700'
+                                  }`}
+                                >
+                                  {req.status}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteRequirement(req.id, req.uid)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="pl-4 text-sm text-muted-foreground">
+                          No requirements yet. Click "Add Requirement" to create one.
+                        </p>
                       )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteSubject(subject.id, subject.name)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -223,11 +394,7 @@ function ProjectDetailContent() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openSubjectDialog(group.id)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => openSubjectDialog(group.id)}>
                     Add Subject
                   </Button>
                   <Button
@@ -241,27 +408,83 @@ function ProjectDetailContent() {
               </div>
 
               {group.subjects.length > 0 ? (
-                <div className="space-y-2 pl-4">
-                  {group.subjects.map((subject) => (
-                    <div
-                      key={subject.id}
-                      className="flex items-center justify-between rounded border p-2"
-                    >
-                      <div>
-                        <p className="font-medium">{subject.name}</p>
-                        {subject.description && (
-                          <p className="text-sm text-muted-foreground">{subject.description}</p>
+                <div className="space-y-4 pl-4">
+                  {group.subjects.map((subject) => {
+                    const subjectRequirements = getRequirementsForSubject(subject.id);
+                    return (
+                      <div key={subject.id} className="rounded border bg-gray-50 p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{subject.name}</p>
+                            {subject.description && (
+                              <p className="text-sm text-muted-foreground">{subject.description}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openRequirementDialog(subject.id)}
+                            >
+                              Add Requirement
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteSubject(subject.id, subject.name)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Requirements for this subject */}
+                        {subjectRequirements.length > 0 ? (
+                          <div className="mt-2 space-y-1 pl-4">
+                            {subjectRequirements.map((req) => (
+                              <div
+                                key={req.id}
+                                className="flex items-center justify-between rounded border bg-white p-2 text-sm"
+                              >
+                                <div className="flex-1">
+                                  <span className="font-mono text-xs text-muted-foreground">
+                                    {req.uid}
+                                  </span>
+                                  <span className="ml-2">
+                                    {req.currentVersion?.title || 'Untitled'}
+                                  </span>
+                                  <span
+                                    className={`ml-2 rounded px-2 py-0.5 text-xs ${
+                                      req.status === 'DRAFT'
+                                        ? 'bg-gray-100 text-gray-700'
+                                        : req.status === 'REVIEW'
+                                          ? 'bg-yellow-100 text-yellow-700'
+                                          : req.status === 'APPROVED'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-red-100 text-red-700'
+                                    }`}
+                                  >
+                                    {req.status}
+                                  </span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteRequirement(req.id, req.uid)}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="pl-4 text-sm text-muted-foreground">
+                            No requirements yet. Click "Add Requirement" to create one.
+                          </p>
                         )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteSubject(subject.id, subject.name)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="pl-4 text-sm text-muted-foreground">No subjects in this group</p>
@@ -282,9 +505,7 @@ function ProjectDetailContent() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create Project Group</DialogTitle>
-              <DialogDescription>
-                Groups help organize subjects within a project.
-              </DialogDescription>
+              <DialogDescription>Groups help organize subjects within a project.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -349,9 +570,7 @@ function ProjectDetailContent() {
                 <Input
                   id="subject-description"
                   value={subjectForm.description}
-                  onChange={(e) =>
-                    setSubjectForm({ ...subjectForm, description: e.target.value })
-                  }
+                  onChange={(e) => setSubjectForm({ ...subjectForm, description: e.target.value })}
                   placeholder="Enter description (optional)"
                 />
               </div>
@@ -369,6 +588,96 @@ function ProjectDetailContent() {
               </Button>
               <Button onClick={handleCreateSubject} disabled={!subjectForm.name}>
                 Create Subject
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create Requirement Dialog */}
+        <Dialog open={isRequirementDialogOpen} onOpenChange={setIsRequirementDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Create Requirement</DialogTitle>
+              <DialogDescription>
+                Add a new requirement to track functional or non-functional needs.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="req-title">Title *</Label>
+                <Input
+                  id="req-title"
+                  value={requirementForm.title}
+                  onChange={(e) =>
+                    setRequirementForm({ ...requirementForm, title: e.target.value })
+                  }
+                  placeholder="Enter requirement title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="req-statement">Statement *</Label>
+                <textarea
+                  id="req-statement"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  rows={4}
+                  value={requirementForm.statement}
+                  onChange={(e) =>
+                    setRequirementForm({ ...requirementForm, statement: e.target.value })
+                  }
+                  placeholder="Describe what this requirement specifies"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="req-rationale">Rationale</Label>
+                <textarea
+                  id="req-rationale"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  rows={3}
+                  value={requirementForm.rationale}
+                  onChange={(e) =>
+                    setRequirementForm({ ...requirementForm, rationale: e.target.value })
+                  }
+                  placeholder="Why is this requirement needed? (optional)"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="req-priority">Priority</Label>
+                <Input
+                  id="req-priority"
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={requirementForm.priority}
+                  onChange={(e) =>
+                    setRequirementForm({ ...requirementForm, priority: parseInt(e.target.value) })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">1 (highest) to 5 (lowest)</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsRequirementDialogOpen(false);
+                  setRequirementForm({
+                    title: '',
+                    statement: '',
+                    rationale: '',
+                    tags: [],
+                    priority: 1,
+                    subjectId: null,
+                    parentRequirementId: null,
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateRequirement}
+                disabled={!requirementForm.title || !requirementForm.statement}
+              >
+                Create Requirement
               </Button>
             </DialogFooter>
           </DialogContent>
